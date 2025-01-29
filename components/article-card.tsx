@@ -1,9 +1,11 @@
-import { Card, CardContent } from "@/components/ui/card"
 import { Article } from "@/types/article"
 import Image from "next/image"
-import { Clock, Bookmark as BookmarkIcon } from "lucide-react"
+import { 
+  Bookmark as BookmarkIcon,
+} from "lucide-react"
 import Link from "next/link"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { ArticleCardMenu } from "./article-card-menu"
 
 interface ArticleCardProps {
   article: Article
@@ -26,19 +28,23 @@ export function ArticleCard({ article }: ArticleCardProps) {
               {article.author ? `@${article.author}` : article.source}
             </span>
           </div>
-          <div className="flex items-center gap-1.5">
-            <BookmarkIcon className="w-3.5 h-3.5 text-muted-foreground" />
-            <span className="text-xs text-muted-foreground">
-              {(() => {
-                const date = new Date(article.savedAt)
-                const isCurrentYear = date.getFullYear() === new Date().getFullYear()
-                return date.toLocaleDateString('en-US', {
-                  month: 'long',
-                  day: 'numeric',
-                  year: isCurrentYear ? undefined : 'numeric'
-                })
-              })()}
-            </span>
+
+          <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1.5">
+              <BookmarkIcon className="w-3.5 h-3.5 text-muted-foreground" />
+              <span className="text-xs text-muted-foreground">
+                {(() => {
+                  const date = new Date(article.savedAt)
+                  const isCurrentYear = date.getFullYear() === new Date().getFullYear()
+                  return date.toLocaleDateString('en-US', {
+                    month: 'long',
+                    day: 'numeric',
+                    year: isCurrentYear ? undefined : 'numeric'
+                  })
+                })()}
+              </span>
+            </div>
+            <ArticleCardMenu />
           </div>
         </div>
 
@@ -69,16 +75,18 @@ export function ArticleCard({ article }: ArticleCardProps) {
           </div>
           
           {/* Footer Section */}
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <div className="flex items-center gap-1 text-xs">
-              {article.readingTimeMinutes} min read
+          <div className="flex items-center justify-between text-sm text-muted-foreground">
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1 text-xs">
+                {article.readingTimeMinutes} min read
+              </div>
+              {article.readingProgress > 0 && (
+                <>
+                  <span className="text-xs">•</span>
+                  <span className="text-xs">{article.readingProgress}% complete</span>
+                </>
+              )}
             </div>
-            {article.readingProgress > 0 && (
-              <>
-                <span className="text-xs">•</span>
-                <span className="text-xs">{article.readingProgress}% complete</span>
-              </>
-            )}
           </div>
         </div>
       </div>
