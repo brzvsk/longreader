@@ -8,4 +8,8 @@ export interface Article {
   readingProgress: number;
   savedAt: string;
   thumbnailUrl?: string;
+}
+
+export interface ArticleContent extends Omit<Article, 'description'> {
+  content: string;
 } 
