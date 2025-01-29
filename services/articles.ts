@@ -13,10 +13,10 @@ export async function getArticles(): Promise<Article[]> {
       source: "dev.to",
       author: "reactdev",
       readingTimeMinutes: 8,
-      readingProgress: 20,
-      savedAt: "2024-03-15T10:00:00Z",
-      thumbnailUrl: "https://picsum.photos/seed/1/800/600",
-      sourceIconUrl: "https://picsum.photos/seed/1/800/600",
+      readingProgress: 0,
+      savedAt: "2025-03-15T10:00:00Z",
+      thumbnailUrl: "https://picsum.photos/seed/1/600/600",
+      sourceIconUrl: "https://picsum.photos/seed/1/600/600",
     },
     {
       id: "2",
@@ -26,8 +26,17 @@ export async function getArticles(): Promise<Article[]> {
       readingTimeMinutes: 12,
       readingProgress: 65,
       savedAt: "2024-03-14T15:30:00Z",
-      thumbnailUrl: "https://picsum.photos/seed/2/800/600",
+      thumbnailUrl: "https://picsum.photos/seed/2/600/600",
     //   sourceIconUrl: "https://picsum.photos/seed/2/800/600",
+    },
+    {
+      id: "3",
+      title: "Why is React Server Components so important?",
+      description: "React Server Components are a new way to build React applications that are faster, more secure, and easier to scale.",
+      source: "dev.to",
+      readingTimeMinutes: 15,
+      readingProgress: 21,
+      savedAt: "2024-03-11T15:30:00Z",
     },
   ]
 }
