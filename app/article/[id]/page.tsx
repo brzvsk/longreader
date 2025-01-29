@@ -4,6 +4,7 @@ import { notFound } from "next/navigation"
 import { Suspense } from "react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { MDXRemote } from 'next-mdx-remote/rsc'
+import { ScrollRestoration } from "@/components/scroll-restoration"
 
 export default async function ArticlePage({
   params: { id },
@@ -27,6 +28,7 @@ export default async function ArticlePage({
           </Suspense>
         </article>
       </main>
+      <ScrollRestoration progress={article.readingProgress} />
     </>
   )
 }
