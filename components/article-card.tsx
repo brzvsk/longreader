@@ -11,22 +11,12 @@ export function ArticleCard({ article }: ArticleCardProps) {
   return (
     <Card className="overflow-hidden hover:shadow-lg transition-shadow">
       <CardContent className="p-0">
-        <div className="flex flex-col sm:flex-row gap-4">
-          {article.thumbnailUrl && (
-            <div className="relative w-full sm:w-48 h-48">
-              <Image
-                src={article.thumbnailUrl}
-                alt={article.title}
-                fill
-                className="object-cover"
-              />
-            </div>
-          )}
-          <div className="flex flex-col gap-2 p-4">
+        <div className="flex flex-row gap-4">
+          <div className="flex-1 flex flex-col gap-2 p-4">
             <h2 className="text-xl font-semibold line-clamp-2">{article.title}</h2>
             <p className="text-muted-foreground line-clamp-2">{article.description}</p>
             
-            <div className="flex flex-wrap gap-4 mt-2 text-sm text-muted-foreground">
+            <div className="flex flex-wrap gap-4 mt-auto text-sm text-muted-foreground">
               <div className="flex items-center gap-1">
                 <Clock className="w-4 h-4" />
                 {article.readingTimeMinutes} min read
@@ -47,6 +37,16 @@ export function ArticleCard({ article }: ArticleCardProps) {
               </span>
             </div>
           </div>
+          {article.thumbnailUrl && (
+            <div className="relative w-32 h-auto aspect-square">
+              <Image
+                src={article.thumbnailUrl}
+                alt={article.title}
+                fill
+                className="object-cover"
+              />
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>

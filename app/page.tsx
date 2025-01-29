@@ -6,7 +6,7 @@ import { Suspense } from "react"
 // Mock data - replace with your actual data fetching logic
 async function getArticles(): Promise<Article[]> {
   // Simulate network delay
-  await new Promise((resolve) => setTimeout(resolve, 2000))
+  await new Promise((resolve) => setTimeout(resolve, 700))
   
   return [
     {
