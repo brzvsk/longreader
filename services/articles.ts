@@ -16,6 +16,7 @@ export async function getArticles(): Promise<Article[]> {
       readingProgress: 20,
       savedAt: "2024-03-15T10:00:00Z",
       thumbnailUrl: "https://picsum.photos/seed/1/800/600",
+      sourceIconUrl: "https://picsum.photos/seed/1/800/600",
     },
     {
       id: "2",
@@ -26,6 +27,7 @@ export async function getArticles(): Promise<Article[]> {
       readingProgress: 65,
       savedAt: "2024-03-14T15:30:00Z",
       thumbnailUrl: "https://picsum.photos/seed/2/800/600",
+    //   sourceIconUrl: "https://picsum.photos/seed/2/800/600",
     },
   ]
 }

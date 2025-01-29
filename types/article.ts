@@ -8,6 +8,7 @@ export interface Article {
   readingProgress: number;
   savedAt: string;
   thumbnailUrl?: string;
+  sourceIconUrl?: string;
 }
 
 export interface ArticleContent extends Omit<Article, 'description'> {

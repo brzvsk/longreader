@@ -1,4 +1,3 @@
-import { Article } from "@/types/article"
 import { ArticleCard } from "@/components/article-card"
 import { ArticleCardSkeleton } from "@/components/article-card-skeleton"
 import { Suspense } from "react"
