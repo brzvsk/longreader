@@ -6,9 +6,14 @@ import confetti from 'canvas-confetti'
 interface ReadingProgressProps {
   initialProgress: number
   onProgressChange?: (progress: number) => void
+  onNearEnd?: (isNearEnd: boolean) => void
 }
 
-export function ReadingProgress({ initialProgress, onProgressChange }: ReadingProgressProps) {
+export function ReadingProgress({ 
+  initialProgress, 
+  onProgressChange,
+  onNearEnd 
+}: ReadingProgressProps) {
   const [hasShownConfetti, setHasShownConfetti] = useState(false)
   const [progress, setProgress] = useState(initialProgress)
 
@@ -61,6 +66,9 @@ export function ReadingProgress({ initialProgress, onProgressChange }: ReadingPr
       setProgress(newProgress)
       onProgressChange?.(newProgress)
 
+      // Notify when near end (95% or more)
+      onNearEnd?.(newProgress >= 95)
+
       if (newProgress === 100 && !hasShownConfetti) {
         fireConfetti()
         setHasShownConfetti(true)
@@ -69,7 +77,7 @@ export function ReadingProgress({ initialProgress, onProgressChange }: ReadingPr
 
     window.addEventListener('scroll', handleScroll, { passive: true })
     return () => window.removeEventListener('scroll', handleScroll)
-  }, [hasShownConfetti, fireConfetti, onProgressChange])
+  }, [hasShownConfetti, fireConfetti, onProgressChange, onNearEnd])
 
   return null
 } 

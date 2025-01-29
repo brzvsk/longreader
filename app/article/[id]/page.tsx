@@ -1,35 +1,30 @@
 import { getArticleById } from "@/services/articles"
-import { ArticleHeader } from "@/components/article-header"
 import { notFound } from "next/navigation"
 import { Suspense } from "react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { MDXRemote } from 'next-mdx-remote/rsc'
-import { ScrollRestoration } from "@/components/scroll-restoration"
+import { ArticleContent } from "@/components/article-content"
 
-export default async function ArticlePage({
-  params: { id },
-}: {
-  params: { id: string }
-}) {
+interface PageProps {
+  params: Promise<{ id: string }> | { id: string }
+}
+
+export default async function ArticlePage({ params }: PageProps) {
+  const resolvedParams = await params
+  
   let article;
   try {
-    article = await getArticleById(id)
+    article = await getArticleById(resolvedParams.id)
   } catch {
     notFound()
   }
 
   return (
-    <>
-      <ArticleHeader title={article.title} initialProgress={article.readingProgress} />
-      <main className="container mx-auto px-4 py-24">
-        <article className="prose dark:prose-invert mx-auto">
-          <Suspense fallback={<ArticleSkeleton />}>
-            <MDXRemote source={article.content} />
-          </Suspense>
-        </article>
-      </main>
-      <ScrollRestoration progress={article.readingProgress} />
-    </>
+    <ArticleContent article={article}>
+      <Suspense fallback={<ArticleSkeleton />}>
+        <MDXRemote source={article.content} />
+      </Suspense>
+    </ArticleContent>
   )
 }
 

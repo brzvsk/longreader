@@ -19,14 +19,6 @@ export function ArticleHeader({ title, initialProgress }: ArticleHeaderProps) {
   useEffect(() => {
     const handleScroll = () => {
       const currentScrollY = window.scrollY
-      const windowHeight = window.innerHeight
-      const documentHeight = document.documentElement.scrollHeight
-      
-      // Calculate reading progress
-      const scrollProgress = (currentScrollY / (documentHeight - windowHeight)) * 100
-      setProgress(Math.min(Math.round(scrollProgress), 100))
-      
-      // Handle header visibility
       setIsVisible(currentScrollY < lastScrollY || currentScrollY < 100)
       setLastScrollY(currentScrollY)
     }
@@ -50,7 +42,7 @@ export function ArticleHeader({ title, initialProgress }: ArticleHeaderProps) {
           </div>
         </div>
       </header>
-      <div className="fixed top-0 left-0 right-0 z-50">
+      <div className="fixed bottom-0 left-0 right-0 z-50">
         <div className="h-1 bg-muted">
           <div 
             className="h-full bg-foreground transition-all duration-300" 
