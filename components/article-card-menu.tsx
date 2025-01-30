@@ -1,7 +1,7 @@
 "use client"
 
 import {
-  Share2,
+  Send,
   Link2,
   ExternalLink,
   Archive,
@@ -41,7 +41,7 @@ export function ArticleCardMenu() {
           Listen
         </DropdownMenuItem>
         <DropdownMenuItem>
-          <Share2 className="mr-2 h-4 w-4" />
+          <Send className="mr-2 h-4 w-4" />
           Share...
         </DropdownMenuItem>
         <DropdownMenuItem>
