@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, Roboto, Open_Sans } from 'next/font/google'
-import "./globals.css";
+import "./globals.css"
 
 // For a single font
 const inter = Inter({ subsets: ['latin', 'cyrillic'] })

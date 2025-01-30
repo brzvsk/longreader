@@ -11,7 +11,18 @@ interface ArticleCardProps {
   article: Article
 }
 
+function getDomainFromUrl(url: string): string {
+  try {
+    const domain = new URL(url).hostname.replace('www.', '')
+    return domain
+  } catch {
+    return url
+  }
+}
+
 export function ArticleCard({ article }: ArticleCardProps) {
+  const sourceName = article.source ? getDomainFromUrl(article.source) : 'Unknown'
+  
   return (
     <Link href={`/article/${article.id}`}>
       <div className="border-b border-zinc-200 dark:border-zinc-800 last:border-b p-6 px-0">
@@ -21,11 +32,11 @@ export function ArticleCard({ article }: ArticleCardProps) {
             <Avatar className="h-6 w-6">
               <AvatarImage src={article.sourceIconUrl} />
               <AvatarFallback>
-                {(article.source || 'A').charAt(0).toUpperCase()}
+                {sourceName.charAt(0).toUpperCase()}
               </AvatarFallback>
             </Avatar>
             <span className="text-xs text-muted-foreground">
-              {article.author ? `@${article.author}` : article.source}
+              {article.author ? `@${article.author}` : sourceName}
             </span>
           </div>
 
@@ -44,7 +55,10 @@ export function ArticleCard({ article }: ArticleCardProps) {
                 })()}
               </span>
             </div>
-            <ArticleCardMenu />
+            <ArticleCardMenu 
+              articleId={article.id} 
+              sourceUrl={article.source || undefined}
+            />
           </div>
         </div>
 
