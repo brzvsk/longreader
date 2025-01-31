@@ -9,6 +9,7 @@ import {
   Trash2,
   Check,
   MoreVertical,
+  LucideIcon,
 } from "lucide-react"
 import {
   DropdownMenu,
@@ -26,41 +27,83 @@ interface ArticleCardMenuProps {
   onDelete?: () => void
 }
 
+interface MenuAction {
+  icon: LucideIcon
+  label: string
+  onClick: (e: React.MouseEvent) => void | Promise<void>
+  className?: string
+  disabled?: boolean
+}
+
 export function ArticleCardMenu({ articleId, sourceUrl, onDelete }: ArticleCardMenuProps) {
   const [open, setOpen] = React.useState(false)
-
-  const handleCopyLink = async (e: React.MouseEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    
-    if (sourceUrl) {
-      await copyToClipboard(sourceUrl)
-    }
-    setOpen(false)
-  }
-
-  const handleOpenInBrowser = (e: React.MouseEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    
-    if (sourceUrl) {
-      window.Telegram?.WebApp?.openLink(sourceUrl)
-    }
-    setOpen(false)
-  }
 
   const handleClick = (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
   }
 
-  const handleOpenChange = (newOpen: boolean) => {
-    setOpen(newOpen)
+  const createHandler = (action: (e: React.MouseEvent) => void | Promise<void>) => {
+    return async (e: React.MouseEvent) => {
+      e.preventDefault()
+      e.stopPropagation()
+      await action(e)
+      setOpen(false)
+    }
   }
+
+  const menuItems: MenuAction[] = [
+    {
+      icon: Check,
+      label: "Mark as Read",
+      onClick: () => {},
+    },
+    {
+      icon: Headphones,
+      label: "Listen",
+      onClick: () => {},
+      className: "text-muted-foreground",
+      disabled: true,
+    },
+    {
+      icon: Send,
+      label: "Share...",
+      onClick: () => {},
+    },
+    {
+      icon: Link2,
+      label: "Copy Link",
+      onClick: async () => {
+        if (sourceUrl) {
+          await copyToClipboard(sourceUrl)
+        }
+      },
+    },
+    {
+      icon: ExternalLink,
+      label: "Open in Browser",
+      onClick: () => {
+        if (sourceUrl) {
+          window.Telegram?.WebApp?.openLink(sourceUrl)
+        }
+      },
+    },
+    {
+      icon: Archive,
+      label: "Move to Archive",
+      onClick: () => {},
+    },
+    {
+      icon: Trash2,
+      label: "Remove",
+      onClick: () => onDelete?.(),
+      className: "text-red-600",
+    },
+  ]
 
   return (
     <div onClick={handleClick}>
-      <DropdownMenu open={open} onOpenChange={handleOpenChange}>
+      <DropdownMenu open={open} onOpenChange={setOpen}>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" size="icon" className="h-8 w-8">
             <MoreVertical className="h-4 w-4 text-muted-foreground" />
@@ -68,40 +111,17 @@ export function ArticleCardMenu({ articleId, sourceUrl, onDelete }: ArticleCardM
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          <DropdownMenuItem onSelect={() => setOpen(false)}>
-            <Check className="mr-2 h-4 w-4" />
-            Mark as Read
-          </DropdownMenuItem>
-          <DropdownMenuItem 
-            onSelect={() => setOpen(false)}
-            className="text-muted-foreground"
-          >
-            <Headphones className="mr-2 h-4 w-4" />
-            Listen
-          </DropdownMenuItem>
-          <DropdownMenuItem onSelect={() => setOpen(false)}>
-            <Send className="mr-2 h-4 w-4" />
-            Share...
-          </DropdownMenuItem>
-          <DropdownMenuItem onSelect={handleCopyLink}>
-            <Link2 className="mr-2 h-4 w-4" />
-            Copy Link
-          </DropdownMenuItem>
-          <DropdownMenuItem onSelect={handleOpenInBrowser}>
-            <ExternalLink className="mr-2 h-4 w-4" />
-            Open in Browser
-          </DropdownMenuItem>
-          <DropdownMenuItem onSelect={() => setOpen(false)}>
-            <Archive className="mr-2 h-4 w-4" />
-            Move to Archive
-          </DropdownMenuItem>
-          <DropdownMenuItem 
-            onSelect={() => setOpen(false)} 
-            className="text-red-600"
-          >
-            <Trash2 className="mr-2 h-4 w-4" />
-            Remove
-          </DropdownMenuItem>
+          {menuItems.map((item) => (
+            <DropdownMenuItem
+              key={item.label}
+              onSelect={createHandler(item.onClick)}
+              className={item.className}
+              disabled={item.disabled}
+            >
+              <item.icon className="mr-2 h-4 w-4" />
+              {item.label}
+            </DropdownMenuItem>
+          ))}
         </DropdownMenuContent>
       </DropdownMenu>
     </div>
