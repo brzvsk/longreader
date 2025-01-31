@@ -39,6 +39,16 @@ export function ArticleCardMenu({ articleId, sourceUrl, onDelete }: ArticleCardM
     setOpen(false)
   }
 
+  const handleOpenInBrowser = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    
+    if (sourceUrl) {
+      window.Telegram?.WebApp?.openLink(sourceUrl)
+    }
+    setOpen(false)
+  }
+
   const handleClick = (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
@@ -77,7 +87,7 @@ export function ArticleCardMenu({ articleId, sourceUrl, onDelete }: ArticleCardM
             <Link2 className="mr-2 h-4 w-4" />
             Copy Link
           </DropdownMenuItem>
-          <DropdownMenuItem onSelect={() => setOpen(false)}>
+          <DropdownMenuItem onSelect={handleOpenInBrowser}>
             <ExternalLink className="mr-2 h-4 w-4" />
             Open in Browser
           </DropdownMenuItem>
