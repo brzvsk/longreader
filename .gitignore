@@ -18,3 +18,6 @@ certificates
 
 # macOS
 .DS_Store
+
+# vscode
+longreader.code-workspace
