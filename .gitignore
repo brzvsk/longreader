@@ -39,6 +39,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
-longread.code-workspace
+*.code-workspace
 
 certificates
