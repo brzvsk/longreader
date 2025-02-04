@@ -3,10 +3,13 @@ To implement the backend for the [Article Management Service API](./ArticleManag
 ### Backend Technology Stack
 
 1. **Programming Language:**
-   - **Node.js**: A JavaScript runtime built on Chrome's V8 JavaScript engine, ideal for building scalable network applications.
+   - **Python**: A versatile programming language known for its readability and simplicity, suitable for rapid development and prototyping.
+     - Pros: Unified codebase with the parser, rich ecosystem, ease of use, asynchronous capabilities, excellent MongoDB integration.
+     - Cons: Slower performance compared to some languages, concurrency limitations due to GIL, higher memory usage.
 
 2. **Web Framework:**
-   - **Express.js**: A minimal and flexible Node.js web application framework that provides a robust set of features for web and mobile applications.
+   - **FastAPI**: A modern, fast (high-performance), web framework for building APIs with Python 3.7+ based on standard Python type hints.
+     - Pros: Fast to code, high performance, easy integration with async tasks, automatic interactive API documentation.
 
 3. **Authentication:**
    - **Passport.js**: A popular authentication middleware for Node.js, which can be used to implement Telegram WebApp authentication.
