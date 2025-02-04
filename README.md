@@ -19,7 +19,7 @@ List any prerequisites needed to run the project, such as:
 - Java (for the Telegram bot)
 - Maven (for building the Telegram bot)
 
-## Setup
+## Setup // TODO: update with docker compose
 
 ### Frontend
 
