@@ -1,9 +1,9 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from typing import List
 
-from .models.article import Article, ArticleContent
+from .models.article import Article, ArticleCollection
 from .services.article_service import get_all_articles, get_article_by_id
+from .database import create_indexes
 
 app = FastAPI(
     title="LongReader API",
@@ -20,6 +20,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.on_event("startup")
+async def startup_event():
+    # Initialize database indexes
+    await create_indexes()
+
 @app.get("/")
 async def root():
     return {
@@ -27,10 +32,10 @@ async def root():
         "status": "running"
     }
 
-@app.get("/articles", response_model=List[Article])
+@app.get("/articles", response_model=ArticleCollection)
 async def get_articles():
     return await get_all_articles()
 
-@app.get("/articles/{article_id}", response_model=ArticleContent)
+@app.get("/articles/{article_id}", response_model=Article)
 async def get_article(article_id: str):
     return await get_article_by_id(article_id) 
