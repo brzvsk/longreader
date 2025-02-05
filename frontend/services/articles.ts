@@ -6,6 +6,14 @@ const DEFAULT_HEADERS = {
   'Content-Type': 'application/json',
 }
 
+function getUserId(): string {
+  const userId = localStorage.getItem('user_id')
+  if (!userId) {
+    throw new Error('User not authenticated')
+  }
+  return userId
+}
+
 async function apiRequest<T>(
   endpoint: string, 
   options: RequestInit = {}
@@ -35,12 +43,14 @@ async function apiRequest<T>(
   }
 }
 
-export async function getUserArticles(userId: string): Promise<Article[]> {
+export async function getUserArticles(): Promise<Article[]> {
+  const userId = getUserId()
   const response = await apiRequest<{ articles: Article[] }>(`/users/${userId}/articles`)
   return response.articles
 }
 
-export async function getUserArticle(userId: string, articleId: string): Promise<ArticleContent> {
+export async function getUserArticle(articleId: string): Promise<ArticleContent> {
+  const userId = getUserId()
   return apiRequest<ArticleContent>(`/users/${userId}/articles/${articleId}`)
 }
 

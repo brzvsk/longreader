@@ -13,12 +13,7 @@ export function UserArticlesList() {
   useEffect(() => {
     const fetchArticles = async () => {
       try {
-        const userId = localStorage.getItem('user_id')
-        if (!userId) {
-          return
-        }
-
-        const fetchedArticles = await getUserArticles(userId)
+        const fetchedArticles = await getUserArticles()
         setArticles(fetchedArticles)
       } catch (error) {
         console.error('Failed to fetch articles:', error)

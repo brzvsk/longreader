@@ -21,13 +21,7 @@ export function ClientArticle({ articleId }: ClientArticleProps) {
   useEffect(() => {
     const fetchArticle = async () => {
       try {
-        const userId = localStorage.getItem('user_id')
-        if (!userId) {
-          setError(true)
-          return
-        }
-
-        const fetchedArticle = await getUserArticle(userId, articleId)
+        const fetchedArticle = await getUserArticle(articleId)
         
         if (fetchedArticle && fetchedArticle.content) {
           const mdxSource = await serialize(fetchedArticle.content)
