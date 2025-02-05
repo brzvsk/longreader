@@ -17,14 +17,14 @@ export function ArticleContent({ article, children }: ArticleContentProps) {
 
   return (
     <>
-      <ArticleHeader title={article.title} initialProgress={article.readingProgress} />
+      <ArticleHeader title={article.title} initialProgress={article.progress.percentage} />
       <main className="container mx-auto px-4 py-24">
         <article className="prose dark:prose-invert mx-auto">
           {children}
         </article>
       </main>
       <ReadingProgress 
-        initialProgress={article.readingProgress} 
+        initialProgress={article.progress.percentage} 
         onProgressChange={setProgress}
         onNearEnd={setShowActions}
       />

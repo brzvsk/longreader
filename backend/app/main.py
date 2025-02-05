@@ -17,12 +17,9 @@ from .services.article_service import (
 from .services.auth_service import authenticate_telegram_user
 from .database import create_indexes
 
-# Create logs directory if it doesn't exist
-os.makedirs("logs", exist_ok=True)
-
 # Configure logging
 logger = logging.getLogger()
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)  # Changed from DEBUG to INFO
 
 # Console handler with INFO level
 console_handler = logging.StreamHandler(sys.stdout)
@@ -30,19 +27,8 @@ console_handler.setLevel(logging.INFO)
 console_format = logging.Formatter('%(levelname)s: %(message)s')
 console_handler.setFormatter(console_format)
 
-# File handler with DEBUG level
-file_handler = RotatingFileHandler(
-    'logs/app.log',
-    maxBytes=1024*1024,  # 1MB
-    backupCount=5
-)
-file_handler.setLevel(logging.DEBUG)
-file_format = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-file_handler.setFormatter(file_format)
-
-# Add handlers to the logger
+# Add handler to the logger
 logger.addHandler(console_handler)
-logger.addHandler(file_handler)
 
 # Set uvicorn access logger to warning level to reduce noise
 logging.getLogger("uvicorn.access").setLevel(logging.WARNING)

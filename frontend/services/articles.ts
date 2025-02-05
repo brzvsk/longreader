@@ -35,31 +35,30 @@ async function apiRequest<T>(
   }
 }
 
-export async function getArticles(): Promise<Article[]> {
-  return apiRequest<Article[]>('/articles')
+export async function getUserArticles(userId: string): Promise<Article[]> {
+  const response = await apiRequest<{ articles: Article[] }>(`/users/${userId}/articles`)
+  return response.articles
 }
 
-export async function getArticleById(id: string): Promise<ArticleContent> {
-  return apiRequest<ArticleContent>(`/articles/${id}`)
+export async function getUserArticle(userId: string, articleId: string): Promise<ArticleContent> {
+  return apiRequest<ArticleContent>(`/users/${userId}/articles/${articleId}`)
 }
 
-// New functions for article management
-// export async function saveArticle(url: string): Promise<Article> {
-//   return apiRequest<Article>('/articles', {
-//     method: 'POST',
-//     body: JSON.stringify({ url }),
-//   })
-// }
-
-// export async function updateReadingProgress(id: string, progress: number): Promise<void> {
-//   return apiRequest<void>(`/articles/${id}/progress`, {
+// export async function updateArticleProgress(userId: string, articleId: string, progress: number): Promise<void> {
+//   return apiRequest<void>(`/users/${userId}/articles/${articleId}/progress`, {
 //     method: 'PUT',
-//     body: JSON.stringify({ progress }),
+//     body: JSON.stringify({ progress_percentage: progress }),
 //   })
 // }
 
-// export async function deleteArticle(id: string): Promise<void> {
-//   return apiRequest<void>(`/articles/${id}`, {
+// export async function archiveArticle(userId: string, articleId: string): Promise<void> {
+//   return apiRequest<void>(`/users/${userId}/articles/${articleId}/archive`, {
+//     method: 'PUT',
+//   })
+// }
+
+// export async function deleteArticle(userId: string, articleId: string): Promise<void> {
+//   return apiRequest<void>(`/users/${userId}/articles/${articleId}`, {
 //     method: 'DELETE',
 //   })
-// } 
+// }

@@ -21,22 +21,21 @@ function getDomainFromUrl(url: string): string {
 }
 
 export function ArticleCard({ article }: ArticleCardProps) {
-  const sourceName = article.source ? getDomainFromUrl(article.source) : 'Unknown'
+  const sourceName = getDomainFromUrl(article.metadata.source_url)
   
   return (
-    <Link href={`/article/${article.id}`}>
+    <Link href={`/article/${article._id}`}>
       <div className="border-b border-zinc-200 dark:border-zinc-800 last:border-b p-6 px-0">
         {/* Header Section */}
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
             <Avatar className="h-6 w-6">
-              <AvatarImage src={article.sourceIconUrl} />
               <AvatarFallback>
                 {sourceName.charAt(0).toUpperCase()}
               </AvatarFallback>
             </Avatar>
             <span className="text-xs text-muted-foreground">
-              {article.author ? `@${article.author}` : sourceName}
+              {article.metadata.author ? `@${article.metadata.author}` : sourceName}
             </span>
           </div>
 
@@ -45,7 +44,7 @@ export function ArticleCard({ article }: ArticleCardProps) {
               <BookmarkIcon className="w-3.5 h-3.5 text-muted-foreground" />
               <span className="text-xs text-muted-foreground">
                 {(() => {
-                  const date = new Date(article.savedAt)
+                  const date = new Date(article.timestamps.saved_at)
                   const isCurrentYear = date.getFullYear() === new Date().getFullYear()
                   return date.toLocaleDateString('en-US', {
                     month: 'long',
@@ -56,8 +55,8 @@ export function ArticleCard({ article }: ArticleCardProps) {
               </span>
             </div>
             <ArticleCardMenu 
-              articleId={article.id} 
-              sourceUrl={article.source || undefined}
+              articleId={article._id} 
+              sourceUrl={article.metadata.source_url}
             />
           </div>
         </div>
@@ -70,34 +69,21 @@ export function ArticleCard({ article }: ArticleCardProps) {
                 {article.title}
               </h2>
               <p className="text-base line-clamp-3">
-                {article.description}
+                {article.short_description}
               </p>
             </div>
-
-            {article.thumbnailUrl && (
-              <div className="relative shrink-0 w-[28%] self-top">
-                <div className="aspect-square">
-                  <Image
-                    src={article.thumbnailUrl}
-                    alt={article.title}
-                    fill
-                    className="object-cover rounded-sm"
-                  />
-                </div>
-              </div>
-            )}
           </div>
           
           {/* Footer Section */}
           <div className="flex items-center justify-between text-sm text-muted-foreground">
             <div className="flex items-center gap-2">
               <div className="flex items-center gap-1 text-xs">
-                {article.readingTimeMinutes} min read
+                {article.metadata.reading_time} min read
               </div>
-              {article.readingProgress > 0 && (
+              {article.progress.percentage > 0 && (
                 <>
                   <span className="text-xs">•</span>
-                  <span className="text-xs">{article.readingProgress}% complete</span>
+                  <span className="text-xs">{article.progress.percentage}% complete</span>
                 </>
               )}
             </div>

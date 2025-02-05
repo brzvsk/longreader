@@ -1,30 +1,16 @@
-import { getArticleById } from "@/services/articles"
-import { notFound } from "next/navigation"
 import { Suspense } from "react"
+import { ClientArticle } from "./client-article"
 import { Skeleton } from "@/components/ui/skeleton"
-import { MDXRemote } from 'next-mdx-remote/rsc'
-import { ArticleContent } from "@/components/article-content"
 
 interface PageProps {
-  params: Promise<{ id: string }> | { id: string }
+  params: { id: string }
 }
 
-export default async function ArticlePage({ params }: PageProps) {
-  const resolvedParams = await params
-  
-  let article;
-  try {
-    article = await getArticleById(resolvedParams.id)
-  } catch {
-    notFound()
-  }
-
+export default function ArticlePage({ params }: PageProps) {
   return (
-    <ArticleContent article={article}>
-      <Suspense fallback={<ArticleSkeleton />}>
-        <MDXRemote source={article.content} />
-      </Suspense>
-    </ArticleContent>
+    <Suspense fallback={<ArticleSkeleton />}>
+      <ClientArticle articleId={params.id} />
+    </Suspense>
   )
 }
 

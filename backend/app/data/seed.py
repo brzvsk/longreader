@@ -110,7 +110,7 @@ Server Components are already making waves in production applications, showing s
     
     # Create test user
     test_user = {
-        "telegram_id": "123456789",
+        "telegram_id": "2200219305",
         "metadata": {
             "registered_at": datetime.utcnow(),
             "referral": "test_referral"
