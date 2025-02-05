@@ -14,7 +14,7 @@ class ArticleMetadata(BaseModel):
 class Article(BaseModel):
     id: Optional[PyObjectId] = Field(alias="_id", default=None)
     title: str = Field(...)
-    content: str = Field(...)
+    content: Optional[str] = None
     short_description: str = Field(...)
     metadata: ArticleMetadata = Field(...)
     created_at: datetime = Field(default_factory=datetime.utcnow)
@@ -22,14 +22,6 @@ class Article(BaseModel):
         populate_by_name=True,
         arbitrary_types_allowed=True,
     )
-
-
-class ArticleCollection(BaseModel):
-    """
-    A container holding a list of `Article` instances.
-    This exists because providing a top-level array in a JSON response can be a [vulnerability](https://haacked.com/archive/2009/06/25/json-hijacking.aspx/)
-    """
-    articles: List[Article]
 
 class UserArticleProgress(BaseModel):
     percentage: float = Field(default=0)
@@ -52,20 +44,7 @@ class UserArticle(BaseModel):
         arbitrary_types_allowed=True,
     )
 
-class UserArticleCollection(BaseModel):
-    """
-    A container holding a list of `UserArticle` instances.
-    """
-    articles: List[UserArticle]
-
-class UserArticleDetail(BaseModel):
-    article: Article
-    user_article: UserArticle
-
-class UserArticleDetailCollection(BaseModel):
-    details: List[UserArticleDetail]
-
-# New models for flattened user article response
+# Models for flattened user article response
 class FlattenedTimestamps(BaseModel):
     saved_at: datetime
     archived_at: Optional[datetime] = None
