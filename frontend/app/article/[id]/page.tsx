@@ -6,10 +6,11 @@ interface PageProps {
   params: { id: string }
 }
 
-export default function ArticlePage({ params }: PageProps) {
+export default async function ArticlePage({ params }: PageProps) {
+  const resolvedParams = await params
   return (
     <Suspense fallback={<ArticleSkeleton />}>
-      <ClientArticle articleId={params.id} />
+      <ClientArticle articleId={resolvedParams.id} />
     </Suspense>
   )
 }
