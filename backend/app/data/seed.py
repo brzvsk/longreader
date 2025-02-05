@@ -1,8 +1,10 @@
 import asyncio
-from datetime import datetime
+from datetime import datetime, timedelta
 from motor.motor_asyncio import AsyncIOMotorClient
 from dotenv import load_dotenv
 import os
+from bson import ObjectId
+import random
 
 load_dotenv()
 
@@ -13,8 +15,10 @@ async def seed_database():
     client = AsyncIOMotorClient(MONGODB_URL)
     db = client[DATABASE_NAME]
     
-    # Clear existing articles
+    # Clear existing data
     await db.articles.delete_many({})
+    await db.users.delete_many({})
+    await db.user_articles.delete_many({})
     
     # Sample articles from stub_data
     articles = [
@@ -49,85 +53,16 @@ By executing on the server, these components don't contribute to the JavaScript 
 ```jsx
 async function BlogPost({ id }) {
   const post = await db.posts.findById(id);
-  return (
-    <article>
-      <h1>{post.title}</h1>
-      <p>{post.content}</p>
-    </article>
-  );
+  return <article>{post.content}</article>;
 }
 ```
-
-## Conclusion
-
-Server Components are changing how we think about React applications, bringing the best of server-side rendering while maintaining React's component model.
             """,
-            "short_description": "A deep dive into React Server Components and how they change the way we build React applications.",
+            "short_description": "Learn about React Server Components and how they change the way we build React applications.",
             "metadata": {
-                "source_url": "https://dev.to/specific/page",
-                "author": "reactdev",
+                "source_url": "https://example.com/react-server-components",
+                "author": "John Doe",
                 "publish_date": datetime.utcnow(),
-                "reading_time": 8
-            },
-            "created_at": datetime.utcnow()
-        },
-        {
-            "title": "The Future of Web Development with Next.js 15",
-            "content": """
-# The Future of Web Development with Next.js 15
-
-Next.js 15 brings groundbreaking improvements to the developer experience and application performance. Let's explore what's new and how it changes web development.
-
-## Major Improvements
-
-### 1. Turbopack
-The new Rust-based bundler promises significantly faster build times and improved development experience.
-
-### 2. Server Actions
-Built-in solution for handling form submissions and mutations without API routes.
-
-### 3. Partial Prerendering
-Combine static and dynamic content seamlessly in the same page.
-
-## Performance Enhancements
-
-Next.js 15 focuses heavily on performance optimizations:
-
-- Improved static optimization
-- Better code splitting
-- Enhanced image optimization
-- Smarter client-side caching
-
-## Developer Experience
-
-The developer experience has been significantly improved:
-
-```typescript
-// New API design
-export default async function Page() {
-  const data = await db.query()
-  
-  return (
-    <main>
-      <h1>Welcome to Next.js 15</h1>
-      {data.map(item => (
-        <Card key={item.id} {...item} />
-      ))}
-    </main>
-  )
-}
-```
-
-## Looking Forward
-
-The future of web development with Next.js 15 looks promising, with more features planned for upcoming releases.
-            """,
-            "short_description": "Exploring the latest features and improvements in Next.js 15 and what they mean for developers.",
-            "metadata": {
-                "source_url": "https://medium.com/specific/page",
-                "author": None,
-                "publish_date": datetime.utcnow(),
-                "reading_time": 12
+                "reading_time": 10
             },
             "created_at": datetime.utcnow()
         },
@@ -170,10 +105,57 @@ Server Components are already making waves in production applications, showing s
     ]
     
     # Insert articles
-    result = await db.articles.insert_many(articles)
-    print(f"Inserted {len(result.inserted_ids)} articles")
-    for i, article_id in enumerate(result.inserted_ids):
-        print(f"Article {i + 1} ID: {article_id}")
+    article_result = await db.articles.insert_many(articles)
+    print(f"Inserted {len(article_result.inserted_ids)} articles")
+    
+    # Create test user
+    test_user = {
+        "telegram_id": "123456789",
+        "metadata": {
+            "registered_at": datetime.utcnow(),
+            "referral": "test_referral"
+        }
+    }
+    
+    # Insert test user
+    user_result = await db.users.insert_one(test_user)
+    print(f"Inserted test user with ID: {user_result.inserted_id}")
+    
+    # Create user-article links for all articles
+    user_articles = []
+    for article, article_id in zip(articles, article_result.inserted_ids):
+        content_length = len(article["content"])
+        percentage = random.randint(0, 100)
+        last_position = int(content_length * (percentage / 100))
+        
+        # Generate random datetime for saved_at
+        random_days_saved = random.randint(0, 30)
+        random_seconds_saved = random.randint(0, 86400)
+        saved_at = datetime.utcnow() - timedelta(days=random_days_saved, seconds=random_seconds_saved)
+        
+        # Generate random datetime for updated_at, ensuring it's later than saved_at
+        random_days_updated = random.randint(0, 30 - random_days_saved)
+        random_seconds_updated = random.randint(0, 86400 - random_seconds_saved)
+        updated_at = saved_at + timedelta(days=random_days_updated, seconds=random_seconds_updated)
+        
+        user_articles.append({
+            "user_id": str(user_result.inserted_id),
+            "article_id": article_id,
+            "progress": {
+                "percentage": percentage,
+                "last_position": last_position,
+                "updated_at": updated_at
+            },
+            "timestamps": {
+                "saved_at": saved_at,
+                "archived_at": None,
+                "deleted_at": None
+            }
+        })
+    
+    # Insert user-article links
+    user_articles_result = await db.user_articles.insert_many(user_articles)
+    print(f"Inserted {len(user_articles_result.inserted_ids)} user-article links")
 
 if __name__ == "__main__":
     asyncio.run(seed_database()) 
