@@ -54,12 +54,12 @@ export async function getUserArticle(articleId: string): Promise<ArticleContent>
   return apiRequest<ArticleContent>(`/users/${userId}/articles/${articleId}`)
 }
 
-// export async function updateArticleProgress(userId: string, articleId: string, progress: number): Promise<void> {
-//   return apiRequest<void>(`/users/${userId}/articles/${articleId}/progress`, {
-//     method: 'PUT',
-//     body: JSON.stringify({ progress_percentage: progress }),
-//   })
-// }
+export async function updateArticleProgress(articleId: string, progress: number): Promise<void> {
+  const userId = getUserId()
+  return apiRequest<void>(`/users/${userId}/articles/${articleId}/progress?progress_percentage=${progress}`, {
+    method: 'PUT'
+  })
+}
 
 // export async function archiveArticle(userId: string, articleId: string): Promise<void> {
 //   return apiRequest<void>(`/users/${userId}/articles/${articleId}/archive`, {
