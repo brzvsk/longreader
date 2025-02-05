@@ -18,4 +18,5 @@ class User(BaseModel):
     model_config = ConfigDict(
         populate_by_name=True,
         arbitrary_types_allowed=True,
+        exclude_unset=True,  # This will exclude None values when dumping to dict
     ) 

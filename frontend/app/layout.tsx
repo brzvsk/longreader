@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Inter, Roboto, Open_Sans } from 'next/font/google'
 import "./globals.css"
+import { AuthProvider } from '@/components/providers/auth-provider';
+import { RequireAuth } from '@/components/auth/require-auth';
 
 // For a single font
 const inter = Inter({ subsets: ['latin', 'cyrillic'] })
@@ -31,8 +33,15 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <script src="https://telegram.org/js/telegram-web-app.js" />
+      </head>
       <body className={`font-sans antialiased`}>
-        {children}
+        <AuthProvider>
+          <RequireAuth>
+            {children}
+          </RequireAuth>
+        </AuthProvider>
       </body>
     </html>
   );

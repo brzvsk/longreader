@@ -18,7 +18,8 @@ async def create_user(telegram_id: str, referral: Optional[str] = None) -> User:
             user.metadata.referral = referral
             
         # Insert into database
-        result = await users.insert_one(user.model_dump(by_alias=True))
+        user_dict = user.model_dump(by_alias=True, exclude={"id"})  # Explicitly exclude id field
+        result = await users.insert_one(user_dict)
         
         # Return created user
         created = await users.find_one({"_id": result.inserted_id})
