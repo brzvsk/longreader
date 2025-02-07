@@ -61,11 +61,19 @@ export async function updateArticleProgress(articleId: string, progress: number)
   })
 }
 
-// export async function archiveArticle(userId: string, articleId: string): Promise<void> {
-//   return apiRequest<void>(`/users/${userId}/articles/${articleId}/archive`, {
-//     method: 'PUT',
-//   })
-// }
+export async function archiveArticle(articleId: string): Promise<void> {
+  const userId = getUserId()
+  return apiRequest<void>(`/users/${userId}/articles/${articleId}/archive`, {
+    method: 'PUT'
+  })
+}
+
+export async function unarchiveArticle(articleId: string): Promise<void> {
+  const userId = getUserId()
+  return apiRequest<void>(`/users/${userId}/articles/${articleId}/unarchive`, {
+    method: 'PUT'
+  })
+}
 
 // export async function deleteArticle(userId: string, articleId: string): Promise<void> {
 //   return apiRequest<void>(`/users/${userId}/articles/${articleId}`, {

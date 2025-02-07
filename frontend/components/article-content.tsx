@@ -19,7 +19,7 @@ export function ArticleContent({ article, children }: ArticleContentProps) {
         title={article.title} 
         progress={progress}
       /> */}
-      <main className="container mx-auto px-4 py-24">
+      <main className="container mx-auto pt-16 px-4 py-24">
         <article className="prose dark:prose-invert mx-auto">
           {children}
         </article>

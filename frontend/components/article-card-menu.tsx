@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button"
 import { copyToClipboard } from "@/utils/clipboard"
-import { updateArticleProgress } from "@/services/articles"
+import { updateArticleProgress, archiveArticle, unarchiveArticle } from "@/services/articles"
 import React from "react"
 
 interface ArticleCardMenuProps {
@@ -27,13 +27,16 @@ interface ArticleCardMenuProps {
   sourceUrl?: string
   onDelete?: () => void
   onProgressUpdate?: (progress: number) => void
+  onArchive?: () => void
+  onUnarchive?: () => void
   progress?: number
+  isArchived?: boolean
 }
 
 interface MenuAction {
   icon: LucideIcon
   label: string
-  onClick: (e: React.MouseEvent) => void | Promise<void>
+  onClick: () => void | Promise<void>
   className?: string
   disabled?: boolean
 }
@@ -43,7 +46,10 @@ export function ArticleCardMenu({
   sourceUrl, 
   onDelete,
   onProgressUpdate,
-  progress = 0
+  onArchive,
+  onUnarchive,
+  progress = 0,
+  isArchived = false
 }: ArticleCardMenuProps) {
   const [open, setOpen] = React.useState(false)
   const isCompleted = progress === 100
@@ -53,11 +59,11 @@ export function ArticleCardMenu({
     e.stopPropagation()
   }
 
-  const createHandler = (action: (e: React.MouseEvent) => void | Promise<void>) => {
+  const createHandler = (action: () => void | Promise<void>) => {
     return async (e: React.MouseEvent) => {
       e.preventDefault()
       e.stopPropagation()
-      await action(e)
+      await action()
       setOpen(false)
     }
   }
@@ -97,15 +103,23 @@ export function ArticleCardMenu({
       icon: ExternalLink,
       label: "Open in Browser",
       onClick: () => {
-        if (sourceUrl) {
-          window.Telegram?.WebApp?.openLink(sourceUrl)
+        if (sourceUrl && window.Telegram?.WebApp) {
+          window.open(sourceUrl, '_blank')
         }
       },
     },
     {
       icon: Archive,
-      label: "Move to Archive",
-      onClick: () => {},
+      label: isArchived ? "Unarchive" : "Archive",
+      onClick: async () => {
+        if (isArchived) {
+          await unarchiveArticle(articleId)
+          onUnarchive?.()
+        } else {
+          await archiveArticle(articleId)
+          onArchive?.()
+        }
+      },
     },
     {
       icon: Trash2,
@@ -128,7 +142,10 @@ export function ArticleCardMenu({
           {menuItems.map((item) => (
             <DropdownMenuItem
               key={item.label}
-              onSelect={createHandler(item.onClick)}
+              onSelect={async () => {
+                await item.onClick()
+                setOpen(false)
+              }}
               className={item.className}
               disabled={item.disabled}
             >

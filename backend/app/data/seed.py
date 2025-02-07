@@ -101,6 +101,154 @@ Server Components are already making waves in production applications, showing s
                 "reading_time": 15
             },
             "created_at": datetime.utcnow()
+        },
+        {
+            "title": "The Future of Artificial Intelligence in 2024",
+            "content": """
+# The Future of Artificial Intelligence in 2024
+
+As we delve deeper into 2024, artificial intelligence continues to reshape our world in unprecedented ways. From autonomous systems to creative AI, the landscape is evolving rapidly.
+
+## Key Trends
+
+### 1. Multimodal AI
+Systems that can process and generate multiple types of data - text, images, audio, and video - are becoming increasingly sophisticated.
+
+### 2. AI Governance
+The rise of AI regulation and ethical frameworks is shaping how we develop and deploy AI systems.
+
+### 3. AI in Healthcare
+Breakthrough applications in medical diagnosis, drug discovery, and personalized medicine.
+
+## Impact on Society
+
+The integration of AI into daily life raises important questions about privacy, employment, and human-AI collaboration.
+            """,
+            "short_description": "Explore the latest trends and developments in artificial intelligence and their impact on society.",
+            "metadata": {
+                "source_url": "https://techtrends.com/ai-future",
+                "author": "Sarah Chen",
+                "publish_date": datetime.utcnow() - timedelta(days=5),
+                "reading_time": 12
+            },
+            "created_at": datetime.utcnow()
+        },
+        {
+            "title": "Sustainable Architecture: Building for Tomorrow",
+            "content": """
+# Sustainable Architecture: Building for Tomorrow
+
+The intersection of environmental consciousness and architectural innovation is creating a new paradigm in building design.
+
+## Core Principles
+
+1. Energy Efficiency
+2. Renewable Materials
+3. Waste Reduction
+4. Biophilic Design
+
+## Innovation in Practice
+
+Modern sustainable architecture goes beyond simple green features, incorporating smart technologies and regenerative design principles.
+
+### Case Studies
+- The Living Building Challenge
+- Net-Zero Energy Buildings
+- Urban Forest Integration
+
+## Future Directions
+
+The future of architecture lies in buildings that not only minimize environmental impact but actively contribute to ecosystem health.
+            """,
+            "short_description": "Discover how sustainable architecture is revolutionizing building design and urban development.",
+            "metadata": {
+                "source_url": "https://architectureweekly.com/sustainable",
+                "author": "Michael Green",
+                "publish_date": datetime.utcnow() - timedelta(days=10),
+                "reading_time": 18
+            },
+            "created_at": datetime.utcnow()
+        },
+        {
+            "title": "The Science of Deep Sleep",
+            "content": """
+# The Science of Deep Sleep
+
+Understanding the mechanisms of sleep is crucial for maintaining optimal health and cognitive function.
+
+## Sleep Cycles
+
+### The Four Stages
+1. N1 (Light Sleep)
+2. N2 (True Sleep)
+3. N3 (Deep Sleep)
+4. REM Sleep
+
+## Impact on Health
+
+Deep sleep plays a crucial role in:
+- Memory consolidation
+- Immune system function
+- Cellular repair
+- Emotional regulation
+
+## Improving Sleep Quality
+
+Evidence-based strategies for achieving better sleep, including:
+- Sleep hygiene practices
+- Environmental optimization
+- Circadian rhythm alignment
+            """,
+            "short_description": "Learn about the science behind sleep cycles and how to improve your sleep quality.",
+            "metadata": {
+                "source_url": "https://healthscience.org/sleep",
+                "author": "Dr. Emma Thompson",
+                "publish_date": datetime.utcnow() - timedelta(days=3),
+                "reading_time": 15
+            },
+            "created_at": datetime.utcnow()
+        },
+        {
+            "title": "Quantum Computing: A Beginner's Guide",
+            "content": """
+# Quantum Computing: A Beginner's Guide
+
+Quantum computing represents a fundamental shift in how we process information, leveraging quantum mechanics to solve complex problems.
+
+## Basic Concepts
+
+### Quantum Bits (Qubits)
+Unlike classical bits, qubits can exist in multiple states simultaneously through superposition.
+
+### Quantum Entanglement
+The phenomenon that allows qubits to be fundamentally connected, regardless of distance.
+
+## Applications
+
+- Cryptography
+- Drug Discovery
+- Climate Modeling
+- Financial Modeling
+
+## Current Challenges
+
+The field faces several obstacles:
+1. Decoherence
+2. Error Correction
+3. Scalability
+
+## Future Prospects
+
+The potential impact of quantum computing on various industries and scientific research.
+            """,
+            "short_description": "An accessible introduction to quantum computing and its potential impact on technology.",
+            "metadata": {
+                "source_url": "https://quantumworld.edu/intro",
+                "author": "Prof. David Quantum",
+                "publish_date": datetime.utcnow() - timedelta(days=7),
+                "reading_time": 20
+            },
+            "created_at": datetime.utcnow()
         }
     ]
     

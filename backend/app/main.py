@@ -12,7 +12,8 @@ from .services.article_service import (
     get_user_article_flat,
     update_article_progress,
     archive_user_article,
-    delete_user_article
+    delete_user_article,
+    unarchive_user_article
 )
 from .services.auth_service import authenticate_telegram_user
 from .database import create_indexes
@@ -79,6 +80,11 @@ async def update_progress(user_id: str, article_id: str, progress_percentage: fl
 async def archive_article(user_id: str, article_id: str):
     """Archive an article for a user"""
     return await archive_user_article(user_id, article_id)
+
+@app.put("/users/{user_id}/articles/{article_id}/unarchive", response_model=UserArticle)
+async def unarchive_article(user_id: str, article_id: str):
+    """Unarchive an article for a user"""
+    return await unarchive_user_article(user_id, article_id)
 
 @app.delete("/users/{user_id}/articles/{article_id}", response_model=UserArticle)
 async def delete_article(user_id: str, article_id: str):

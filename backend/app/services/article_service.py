@@ -134,6 +134,30 @@ async def archive_user_article(user_id: str, article_id: str) -> UserArticle:
     except Exception as e:
         raise HTTPException(status_code=500, detail="Failed to archive article")
 
+async def unarchive_user_article(user_id: str, article_id: str) -> UserArticle:
+    """Unarchive an article for a user"""
+    try:
+        result = await user_articles.find_one_and_update(
+            {
+                "user_id": user_id,
+                "article_id": ObjectId(article_id),
+                "timestamps.deleted_at": None
+            },
+            {
+                "$set": {
+                    "timestamps.archived_at": None
+                }
+            },
+            return_document=True
+        )
+        
+        if not result:
+            raise HTTPException(status_code=404, detail="User article not found")
+            
+        return UserArticle(**result)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="Failed to unarchive article")
+
 async def delete_user_article(user_id: str, article_id: str) -> UserArticle:
     """Soft delete an article for a user"""
     try:
