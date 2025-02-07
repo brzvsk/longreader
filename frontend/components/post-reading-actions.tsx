@@ -3,29 +3,156 @@
 import { Share, Archive } from "lucide-react"
 import { Button } from "./ui/button"
 import { cn } from "@/lib/utils"
+import { useEffect, useState, useCallback, useRef } from 'react'
+import confetti from 'canvas-confetti'
+import { updateArticleProgress } from '@/services/articles'
+import { useParams } from 'next/navigation'
 
 interface PostReadingActionsProps {
   isVisible: boolean
+  initialProgress: number
+  onProgressChange?: (progress: number) => void
 }
 
-export function PostReadingActions({ isVisible }: PostReadingActionsProps) {
+export function PostReadingActions({ 
+  isVisible: initialIsVisible, 
+  initialProgress,
+  onProgressChange 
+}: PostReadingActionsProps) {
+  const params = useParams()
+  const articleId = params.id as string
+  const [hasShownConfetti, setHasShownConfetti] = useState(false)
+  const [progress, setProgress] = useState(initialProgress)
+  const [isVisible, setIsVisible] = useState(initialIsVisible)
+  const updateTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const lastProgressRef = useRef(initialProgress)
+
+  // Initial scroll restoration
+  useEffect(() => {
+    if (initialProgress > 0) {
+      setTimeout(() => {
+        const documentHeight = document.documentElement.scrollHeight
+        const windowHeight = window.innerHeight
+        const scrollableHeight = documentHeight - windowHeight
+        const scrollTo = (scrollableHeight * initialProgress) / 100
+        
+        window.scrollTo({
+          top: scrollTo,
+          behavior: 'smooth'
+        })
+      }, 100)
+    }
+  }, [initialProgress])
+
+  const fireConfetti = useCallback(() => {
+    const count = 200
+    const defaults = {
+      origin: { y: 0.7 }
+    }
+
+    function fire(particleRatio: number, opts: confetti.Options) {
+      confetti({
+        ...defaults,
+        ...opts,
+        particleCount: Math.floor(count * particleRatio)
+      })
+    }
+
+    fire(0.25, { spread: 26, startVelocity: 55 })
+    fire(0.2, { spread: 60 })
+    fire(0.35, { spread: 100, decay: 0.91, scalar: 0.8 })
+    fire(0.1, { spread: 120, startVelocity: 25, decay: 0.92, scalar: 1.2 })
+    fire(0.1, { spread: 120, startVelocity: 45 })
+  }, [])
+
+  // Update progress on the server
+  const updateProgress = useCallback((newProgress: number) => {
+    lastProgressRef.current = newProgress
+    updateArticleProgress(articleId, newProgress)
+      .then(() => {
+        console.log('Progress updated:', newProgress, 'for article:', articleId)
+      })
+      .catch(console.error)
+  }, [articleId])
+
+  // Handle scroll events to update progress
+  useEffect(() => {
+    const handleScroll = () => {
+      if (updateTimeoutRef.current) {
+        clearTimeout(updateTimeoutRef.current)
+      }
+
+      const windowHeight = window.innerHeight
+      const documentHeight = document.documentElement.scrollHeight
+      const scrollTop = window.scrollY
+      const scrollableHeight = documentHeight - windowHeight
+
+      const currentProgress = Math.round((scrollTop / scrollableHeight) * 100)
+      const boundedProgress = Math.min(Math.max(currentProgress, 0), 100)
+
+      setProgress(boundedProgress)
+      onProgressChange?.(boundedProgress)
+
+      // Show actions when near the end (90% or more)
+      if (boundedProgress >= 90) {
+        setIsVisible(true)
+      } else {
+        setIsVisible(false)
+      }
+
+      // Show confetti when reaching 100% for the first time
+      if (boundedProgress === 100 && !hasShownConfetti) {
+        fireConfetti()
+        setHasShownConfetti(true)
+      }
+
+      // Debounce progress updates to the server
+      updateTimeoutRef.current = setTimeout(() => {
+        if (boundedProgress !== lastProgressRef.current) {
+          updateProgress(boundedProgress)
+        }
+      }, 1000)
+    }
+
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    return () => {
+      window.removeEventListener('scroll', handleScroll)
+      if (updateTimeoutRef.current) {
+        clearTimeout(updateTimeoutRef.current)
+      }
+    }
+  }, [onProgressChange, updateProgress, hasShownConfetti, fireConfetti])
+
   return (
-    <div className={cn(
-      "fixed bottom-0 left-0 right-0 bg-background/80 backdrop-blur-sm border-t transition-transform duration-500 ease-in-out transform z-40",
-      isVisible ? "translate-y-0" : "translate-y-full"
-    )}>
-      <div className="container mx-auto px-4 py-4">
-        <div className="flex items-center justify-center gap-4">
-          <Button variant="outline" size="lg" className="flex items-center gap-2">
-            <Share className="w-4 h-4" />
-            Share
-          </Button>
-          <Button size="lg" className="flex items-center gap-2">
-            <Archive className="w-4 h-4" />
-            Archive
-          </Button>
+    <>
+      {/* Progress bar */}
+      <div className="fixed bottom-0 left-0 right-0 z-50">
+        <div className="h-1 bg-muted">
+          <div 
+            className="h-full bg-foreground transition-all duration-300" 
+            style={{ width: `${progress}%` }}
+          />
         </div>
       </div>
-    </div>
+
+      {/* Action buttons */}
+      <div className={cn(
+        "fixed bottom-0 left-0 right-0 bg-background/80 backdrop-blur-sm border-t transition-transform duration-500 ease-in-out transform z-40",
+        isVisible ? "translate-y-0" : "translate-y-full"
+      )}>
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-center gap-4">
+            <Button variant="outline" size="lg" className="flex items-center gap-2">
+              <Share className="w-4 h-4" />
+              Share
+            </Button>
+            <Button size="lg" className="flex items-center gap-2">
+              <Archive className="w-4 h-4" />
+              Archive
+            </Button>
+          </div>
+        </div>
+      </div>
+    </>
   )
 } 
