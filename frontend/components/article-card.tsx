@@ -31,8 +31,8 @@ export function ArticleCard({ article }: ArticleCardProps) {
   return (
     <Link href={`/article/${article._id}`}>
       <div className={cn(
-        "border-b border-zinc-200 dark:border-zinc-800 last:border-b p-6 px-0",
-        isCompleted && "opacity-60"
+        "border-b border-zinc-200 dark:border-zinc-800 last:border-b p-6 px-0 transition-all duration-200",
+        isCompleted && "opacity-60 hover:opacity-100"
       )}>
         {/* Header Section */}
         <div className="flex items-center justify-between mb-2">
@@ -94,9 +94,11 @@ export function ArticleCard({ article }: ArticleCardProps) {
                 <>
                   <span className="text-xs">•</span>
                   {isCompleted ? (
-                    <span className="text-xs flex items-center gap-1 text-green-600">
-                      <CheckIcon className="w-3 h-3" />
+                    <span className="text-xs flex items-center gap-1.5 text-green-600 font-medium">
                       completed
+                      <div className="flex-shrink-0 rounded-full bg-green-600/10 p-0.5">
+                        <CheckIcon className="w-3 h-3 text-green-600" />
+                      </div>
                     </span>
                   ) : (
                     <span className="text-xs">{progress}% complete</span>
