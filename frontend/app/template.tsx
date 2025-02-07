@@ -7,6 +7,7 @@ export default function Template({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const pathname = usePathname()
 
+  // TODO: telegram script injects on every page change
   useEffect(() => {
     const script = document.createElement('script')
     script.src = 'https://telegram.org/js/telegram-web-app.js?56'

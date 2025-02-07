@@ -4,18 +4,17 @@ import { ArrowLeft } from "lucide-react"
 import Link from "next/link"
 import { useEffect, useState } from "react"
 import { cn } from "@/lib/utils"
-import { ReadingProgress } from "./reading-progress"
 
 interface ArticleHeaderProps {
   title: string
-  initialProgress: number
+  progress: number
 }
 
-export function ArticleHeader({ title, initialProgress }: ArticleHeaderProps) {
+export function ArticleHeader({ title, progress }: ArticleHeaderProps) {
   const [isVisible, setIsVisible] = useState(true)
   const [lastScrollY, setLastScrollY] = useState(0)
-  const [progress, setProgress] = useState(initialProgress)
 
+  // handles header visibility on scroll
   useEffect(() => {
     const handleScroll = () => {
       const currentScrollY = window.scrollY
@@ -50,10 +49,6 @@ export function ArticleHeader({ title, initialProgress }: ArticleHeaderProps) {
           />
         </div>
       </div>
-      <ReadingProgress 
-        initialProgress={initialProgress} 
-        onProgressChange={setProgress}
-      />
     </>
   )
 } 

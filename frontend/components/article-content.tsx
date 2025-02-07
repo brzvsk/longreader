@@ -13,11 +13,14 @@ interface ArticleContentProps {
 
 export function ArticleContent({ article, children }: ArticleContentProps) {
   const [showActions, setShowActions] = useState(false)
-  const [progress, setProgress] = useState(0)
+  const [progress, setProgress] = useState(article.progress.percentage)
 
   return (
     <>
-      <ArticleHeader title={article.title} initialProgress={article.progress.percentage} />
+      <ArticleHeader 
+        title={article.title} 
+        progress={progress}
+      />
       <main className="container mx-auto px-4 py-24">
         <article className="prose dark:prose-invert mx-auto">
           {children}
