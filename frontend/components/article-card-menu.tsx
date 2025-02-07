@@ -19,12 +19,15 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button"
 import { copyToClipboard } from "@/utils/clipboard"
+import { updateArticleProgress } from "@/services/articles"
 import React from "react"
 
 interface ArticleCardMenuProps {
   articleId: string
   sourceUrl?: string
   onDelete?: () => void
+  onProgressUpdate?: (progress: number) => void
+  progress?: number
 }
 
 interface MenuAction {
@@ -35,8 +38,15 @@ interface MenuAction {
   disabled?: boolean
 }
 
-export function ArticleCardMenu({ articleId, sourceUrl, onDelete }: ArticleCardMenuProps) {
+export function ArticleCardMenu({ 
+  articleId, 
+  sourceUrl, 
+  onDelete,
+  onProgressUpdate,
+  progress = 0
+}: ArticleCardMenuProps) {
   const [open, setOpen] = React.useState(false)
+  const isCompleted = progress === 100
 
   const handleClick = (e: React.MouseEvent) => {
     e.preventDefault()
@@ -55,8 +65,12 @@ export function ArticleCardMenu({ articleId, sourceUrl, onDelete }: ArticleCardM
   const menuItems: MenuAction[] = [
     {
       icon: Check,
-      label: "Mark as Read",
-      onClick: () => {},
+      label: isCompleted ? "Mark as Unread" : "Mark as Read",
+      onClick: async () => {
+        const newProgress = isCompleted ? 0 : 100
+        await updateArticleProgress(articleId, newProgress)
+        onProgressUpdate?.(newProgress)
+      },
     },
     {
       icon: Headphones,

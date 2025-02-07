@@ -2,10 +2,13 @@ import { Article } from "@/types/article"
 import Image from "next/image"
 import { 
   Bookmark as BookmarkIcon,
+  Check as CheckIcon,
 } from "lucide-react"
 import Link from "next/link"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { ArticleCardMenu } from "./article-card-menu"
+import { useState } from "react"
+import { cn } from "@/lib/utils"
 
 interface ArticleCardProps {
   article: Article
@@ -22,10 +25,15 @@ function getDomainFromUrl(url: string): string {
 
 export function ArticleCard({ article }: ArticleCardProps) {
   const sourceName = getDomainFromUrl(article.metadata.source_url)
+  const [progress, setProgress] = useState(article.progress.percentage)
+  const isCompleted = progress === 100
   
   return (
     <Link href={`/article/${article._id}`}>
-      <div className="border-b border-zinc-200 dark:border-zinc-800 last:border-b p-6 px-0">
+      <div className={cn(
+        "border-b border-zinc-200 dark:border-zinc-800 last:border-b p-6 px-0",
+        isCompleted && "opacity-60"
+      )}>
         {/* Header Section */}
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
@@ -57,6 +65,8 @@ export function ArticleCard({ article }: ArticleCardProps) {
             <ArticleCardMenu 
               articleId={article._id} 
               sourceUrl={article.metadata.source_url}
+              onProgressUpdate={setProgress}
+              progress={progress}
             />
           </div>
         </div>
@@ -80,10 +90,17 @@ export function ArticleCard({ article }: ArticleCardProps) {
               <div className="flex items-center gap-1 text-xs">
                 {article.metadata.reading_time} min read
               </div>
-              {article.progress.percentage > 0 && (
+              {progress > 0 && (
                 <>
                   <span className="text-xs">•</span>
-                  <span className="text-xs">{article.progress.percentage}% complete</span>
+                  {isCompleted ? (
+                    <span className="text-xs flex items-center gap-1 text-green-600">
+                      <CheckIcon className="w-3 h-3" />
+                      completed
+                    </span>
+                  ) : (
+                    <span className="text-xs">{progress}% complete</span>
+                  )}
                 </>
               )}
             </div>
