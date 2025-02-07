@@ -3,6 +3,7 @@ import { Inter, Roboto, Open_Sans } from 'next/font/google'
 import "./globals.css"
 import { AuthProvider } from '@/components/providers/auth-provider';
 import { RequireAuth } from '@/components/auth/require-auth';
+import { TelegramProvider } from '@/components/providers/telegram-provider';
 
 // For a single font
 const inter = Inter({ subsets: ['latin', 'cyrillic'] })
@@ -33,10 +34,18 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <script 
+          src="https://telegram.org/js/telegram-web-app.js?56" 
+          async={false}
+        />
+      </head>
       <body className={`font-sans antialiased`}>
         <AuthProvider>
           <RequireAuth>
-            {children}
+            <TelegramProvider>
+              {children}
+            </TelegramProvider>
           </RequireAuth>
         </AuthProvider>
       </body>

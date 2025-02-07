@@ -25,9 +25,8 @@ export function RequireAuth({ children }: RequireAuthProps) {
             <div className="flex items-center justify-center min-h-screen">
                 <div className="text-center p-4">
                     <h1 className="text-xl font-semibold mb-2">Authentication Required</h1>
-                    <p className="mb-2">Please open this app in Telegram to use it.</p>
                     {error && (
-                        <p className="text-red-500 text-sm mt-2">
+                        <p className="text-red-600">
                             Error: {error}
                         </p>
                     )}

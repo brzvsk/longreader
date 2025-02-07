@@ -41,11 +41,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (!mounted) return;
         
         const initAuth = async () => {
+            console.log('Starting authentication process...');
             try {
                 setError(null);
                 // Check if we have stored auth data
+                console.log('Checking stored auth data...');
                 if (auth.isAuthenticated()) {
+                    console.log('Found stored auth data');
                     const { userId, telegramId } = auth.getUserIds();
+                    console.log('User IDs retrieved:', { userId, telegramId });
                     
                     setAuthState({
                         isAuthenticated: true,
@@ -53,12 +57,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                         telegramId,
                     });
                 } else {
+                    console.log('No stored auth data found');
                     // Only check Telegram WebApp on client side
+                    console.log('Checking Telegram WebApp availability:', {
+                        window: !!window,
+                        TelegramObj: !!window?.Telegram,
+                        WebAppObj: !!window?.Telegram?.WebApp
+                    });
+                    
                     if (!window?.Telegram?.WebApp) {
                         throw new Error('This app must be opened in Telegram');
                     }
                     // Try to authenticate with Telegram
+                    console.log('Attempting Telegram authentication...');
                     const response = await auth.authenticateWithTelegram();
+                    console.log('Telegram authentication response:', response);
                     
                     setAuthState({
                         isAuthenticated: true,
@@ -67,6 +80,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                     });
                 }
             } catch (error) {
+                console.error('Authentication error:', error);
                 const errorMessage = error instanceof Error ? error.message : 'Authentication failed';
                 setError(errorMessage);
                 setAuthState({
