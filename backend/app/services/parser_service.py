@@ -94,25 +94,110 @@ class ParserService:
             config = use_config()
             config.set("DEFAULT", "EXTRACTION_TIMEOUT", "30")
             config.set("DEFAULT", "MIN_EXTRACTED_SIZE", "100")
-            logger.debug("Configured trafilatura with timeout: 30s, min_size: 100")
+            
+            # Enhanced configuration for better parsing
+            config.set("DEFAULT", "FAVOR_PRECISION", "True")  # Prefer precision over recall
+            config.set("DEFAULT", "INCLUDE_FORMATTING", "True")  # Better preserve formatting
+            config.set("DEFAULT", "INCLUDE_IMAGES", "True")  # Ensure images are included
+            config.set("DEFAULT", "INCLUDE_LINKS", "True")  # Ensure links are included
+            config.set("DEFAULT", "INCLUDE_TABLES", "True")  # Ensure tables are included
+            config.set("DEFAULT", "MIN_OUTPUT_SIZE", "100")  # Minimum output size in chars
+            config.set("DEFAULT", "MAX_OUTPUT_SIZE", "0")  # No maximum size limit
+            
+            # Add specific handling for known blog platforms
+            url_lower = source_url.lower()
+            is_substack = 'substack.com' in url_lower
+            is_medium = 'medium.com' in url_lower
+            is_blog = any(platform in url_lower for platform in ['wordpress.com', 'blogspot.com', 'ghost.io'])
+            
+            if is_substack or is_medium or is_blog:
+                # Use more specific selectors for blog platforms
+                config.set("DEFAULT", "EXTRACTION_TIMEOUT", "60")  # Give more time for JS content
+                config.set("DEFAULT", "MIN_EXTRACTED_SIZE", "50")  # Lower threshold for blog posts
+                config.set("DEFAULT", "FAVOR_RECALL", "True")  # Blogs need more recall than precision
+            
+            logger.debug(f"Configured trafilatura with enhanced settings for URL type: {'blog platform' if (is_substack or is_medium or is_blog) else 'general'}")
             
             # Extract content and metadata
             downloaded = trafilatura.load_html(html_content)
             logger.debug("Loaded HTML with trafilatura")
             
-            # Extract main content
-            content = trafilatura.extract(
-                downloaded,
-                output_format='markdown',
-                include_tables=True,
-                include_images=True,
-                include_links=True,
-                config=config
-            )
+            # Try different extraction methods if the first one fails
+            content = None
+            extraction_methods = [
+                # First try: Platform-specific extraction
+                lambda: trafilatura.extract(
+                    downloaded,
+                    output_format='markdown',
+                    include_tables=True,
+                    include_images=True,
+                    include_links=True,
+                    include_formatting=True,
+                    favor_precision=not (is_substack or is_medium or is_blog),  # Use recall for blogs
+                    favor_recall=is_substack or is_medium or is_blog,
+                    config=config
+                ),
+                # Second try: General extraction with precision
+                lambda: trafilatura.extract(
+                    downloaded,
+                    output_format='markdown',
+                    include_tables=True,
+                    include_images=True,
+                    include_links=True,
+                    include_formatting=True,
+                    favor_precision=True,
+                    config=config
+                ),
+                # Last resort: Minimal settings with recall
+                lambda: trafilatura.extract(
+                    downloaded,
+                    output_format='markdown',
+                    include_images=True,
+                    include_links=True,
+                    favor_recall=True,
+                    config=config
+                )
+            ]
+            
+            for extract_method in extraction_methods:
+                try:
+                    content = extract_method()
+                    if content and len(content.strip()) > 100:  # Check if we got meaningful content
+                        break
+                except Exception as e:
+                    logger.warning(f"Extraction method failed: {str(e)}")
+                    continue
             
             if not content:
                 logger.error(f"Failed to extract content from URL: {source_url}")
                 raise ValueError("Failed to extract content from URL")
+            
+            # Post-process content to ensure proper formatting
+            content = content.replace('\n\n\n', '\n\n')  # Remove excessive newlines
+            content = content.replace('![]()', '')  # Remove empty image references
+            
+            # Enhanced heading formatting for blog platforms
+            if is_substack or is_medium or is_blog:
+                # Ensure proper spacing around headings
+                for i in range(6, 0, -1):
+                    heading_pattern = f"\n{'#' * i} "
+                    if heading_pattern in content:
+                        content = content.replace(heading_pattern, f"\n\n{'#' * i} ")
+                
+                # Clean up Substack-specific artifacts
+                content = content.replace('Copy link', '')
+                content = content.replace('Share this post', '')
+                content = content.replace('More from', '')
+                
+                # Ensure proper list formatting
+                content = content.replace('\n* ', '\n\n* ')  # Add spacing before lists
+                content = content.replace('\n1. ', '\n\n1. ')  # Add spacing before numbered lists
+            
+            # General heading formatting
+            for i in range(6, 0, -1):
+                old_heading = '#' * i + ' '
+                if old_heading in content:
+                    content = content.replace('\n' + old_heading, '\n\n' + old_heading)
             
             logger.info(f"Successfully extracted content (length: {len(content)} chars)")
             

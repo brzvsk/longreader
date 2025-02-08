@@ -5,11 +5,23 @@ from dotenv import load_dotenv
 import os
 from bson import ObjectId
 import random
+import sys
 
 load_dotenv()
 
 MONGODB_URL = os.getenv("MONGODB_URL", "mongodb://localhost:27017")
 DATABASE_NAME = os.getenv("DATABASE_NAME", "longreader")
+
+async def clear_database():
+    """Clear all collections in the database without seeding new data."""
+    client = AsyncIOMotorClient(MONGODB_URL)
+    db = client[DATABASE_NAME]
+    
+    # Clear existing data
+    await db.articles.delete_many({})
+    await db.users.delete_many({})
+    await db.user_articles.delete_many({})
+    print("Database cleared successfully")
 
 async def seed_database():
     client = AsyncIOMotorClient(MONGODB_URL)
@@ -306,4 +318,7 @@ The potential impact of quantum computing on various industries and scientific r
     print(f"Inserted {len(user_articles_result.inserted_ids)} user-article links")
 
 if __name__ == "__main__":
-    asyncio.run(seed_database()) 
+    if len(sys.argv) > 1 and sys.argv[1] == "--clear":
+        asyncio.run(clear_database())
+    else:
+        asyncio.run(seed_database()) 
