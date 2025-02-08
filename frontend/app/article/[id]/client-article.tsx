@@ -7,6 +7,7 @@ import { MDXRemote } from 'next-mdx-remote'
 import { serialize } from 'next-mdx-remote/serialize'
 import { ArticleContent } from "@/components/article-content"
 import { ArticleContent as ArticleType } from "@/types/article"
+import { MDXRemoteSerializeResult } from 'next-mdx-remote'
 
 interface ClientArticleProps {
   articleId: string
@@ -14,7 +15,7 @@ interface ClientArticleProps {
 
 export function ClientArticle({ articleId }: ClientArticleProps) {
   const [article, setArticle] = useState<ArticleType | null>(null)
-  const [mdxSource, setMdxSource] = useState<any>(null)
+  const [mdxSource, setMdxSource] = useState<MDXRemoteSerializeResult | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
 
@@ -29,7 +30,7 @@ export function ClientArticle({ articleId }: ClientArticleProps) {
         }
         
         setArticle(fetchedArticle)
-      } catch (err) {
+      } catch (_) {
         setError(true)
       } finally {
         setLoading(false)

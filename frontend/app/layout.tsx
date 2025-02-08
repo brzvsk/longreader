@@ -1,26 +1,11 @@
 import type { Metadata } from "next";
-import { Inter, Roboto, Open_Sans } from 'next/font/google'
+import { Inter } from 'next/font/google'
 import "./globals.css"
 import { AuthProvider } from '@/components/providers/auth-provider';
 import { RequireAuth } from '@/components/auth/require-auth';
 import { TelegramProvider } from '@/components/providers/telegram-provider';
 
-// For a single font
 const inter = Inter({ subsets: ['latin', 'cyrillic'] })
-
-// For variable fonts
-const roboto = Roboto({
-  weight: ['400', '500', '700'],
-  subsets: ['latin', 'cyrillic'],
-  display: 'swap',
-})
-
-// Multiple weights and styles
-const openSans = Open_Sans({
-  subsets: ['latin', 'cyrillic'],
-  weight: ['300', '400', '600', '700'],
-  style: ['normal', 'italic']
-})
 
 export const metadata: Metadata = {
   title: "Longreader",
@@ -40,7 +25,7 @@ export default function RootLayout({
           async={false}
         />
       </head>
-      <body className={`font-sans antialiased`}>
+      <body className={`${inter.className} font-sans antialiased`}>
         <AuthProvider>
           <RequireAuth>
             <TelegramProvider>

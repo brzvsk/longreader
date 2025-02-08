@@ -60,15 +60,6 @@ export function ArticleCardMenu({
     e.stopPropagation()
   }
 
-  const createHandler = (action: () => void | Promise<void>) => {
-    return async (e: React.MouseEvent) => {
-      e.preventDefault()
-      e.stopPropagation()
-      await action()
-      setOpen(false)
-    }
-  }
-
   const menuItems: MenuAction[] = [
     {
       icon: Check,

@@ -3,7 +3,6 @@
 import { ArticleContent as ArticleType } from "@/types/article"
 // import { ArticleHeader } from "@/components/article-header"
 import { PostReadingActions } from "@/components/post-reading-actions"
-import { useState } from "react"
 
 interface ArticleContentProps {
   article: ArticleType
@@ -11,8 +10,6 @@ interface ArticleContentProps {
 }
 
 export function ArticleContent({ article, children }: ArticleContentProps) {
-  const [progress, setProgress] = useState(article.progress.percentage)
-
   return (
     <>
       {/* <ArticleHeader 
@@ -27,7 +24,7 @@ export function ArticleContent({ article, children }: ArticleContentProps) {
       <PostReadingActions 
         isVisible={false}
         initialProgress={article.progress.percentage}
-        onProgressChange={setProgress}
+        onProgressChange={() => {}}
       />
     </>
   )

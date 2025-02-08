@@ -1,11 +1,10 @@
 import { Article } from "@/types/article"
-import Image from "next/image"
 import { 
   Bookmark as BookmarkIcon,
   Check as CheckIcon,
 } from "lucide-react"
 import Link from "next/link"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { ArticleCardMenu } from "./article-card-menu"
 import { useState } from "react"
 import { cn } from "@/lib/utils"
