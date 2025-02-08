@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { ArticleCard } from "@/components/article-card"
 import { ArticleCardSkeleton } from "@/components/article-card-skeleton"
-import { getUserArticles } from "@/services/articles"
+import { getUserArticles, archiveArticle, unarchiveArticle, updateArticleProgress } from "@/services/articles"
 import { Article } from '@/types/article'
 import { cn } from '@/lib/utils'
 
@@ -13,6 +13,15 @@ export function UserArticlesList() {
   const [articles, setArticles] = useState<Article[]>([])
   const [loading, setLoading] = useState(true)
   const [activeView, setActiveView] = useState<View>('all')
+
+  const refreshArticles = async () => {
+    try {
+      const fetchedArticles = await getUserArticles()
+      setArticles(fetchedArticles)
+    } catch (error) {
+      console.error('Failed to fetch articles:', error)
+    }
+  }
 
   useEffect(() => {
     const fetchArticles = async () => {
@@ -29,21 +38,31 @@ export function UserArticlesList() {
     fetchArticles()
   }, [])
 
-  const handleArchive = (articleId: string) => {
-    setArticles(prevArticles => {
-      return prevArticles.map(article => {
-        if (article._id === articleId) {
-          return {
-            ...article,
-            timestamps: {
-              ...article.timestamps,
-              archived_at: new Date().toISOString()
-            }
-          }
-        }
-        return article
-      })
-    })
+  const handleArchive = async (articleId: string) => {
+    try {
+      await archiveArticle(articleId)
+      await refreshArticles()
+    } catch (error) {
+      console.error('Failed to archive article:', error)
+    }
+  }
+
+  const handleUnarchive = async (articleId: string) => {
+    try {
+      await unarchiveArticle(articleId)
+      await refreshArticles()
+    } catch (error) {
+      console.error('Failed to unarchive article:', error)
+    }
+  }
+
+  const handleProgressUpdate = async (articleId: string, progress: number) => {
+    try {
+      await updateArticleProgress(articleId, progress)
+      await refreshArticles()
+    } catch (error) {
+      console.error('Failed to update article progress:', error)
+    }
   }
 
   const inProgressArticles = articles
@@ -101,6 +120,8 @@ export function UserArticlesList() {
                 key={article._id} 
                 article={article} 
                 onArchive={() => handleArchive(article._id)}
+                onUnarchive={() => handleUnarchive(article._id)}
+                onProgressUpdate={(progress) => handleProgressUpdate(article._id, progress)}
               />
             ))}
           </div>
@@ -138,6 +159,8 @@ export function UserArticlesList() {
               key={article._id} 
               article={article} 
               onArchive={() => handleArchive(article._id)}
+              onUnarchive={() => handleUnarchive(article._id)}
+              onProgressUpdate={(progress) => handleProgressUpdate(article._id, progress)}
             />
           ))}
         </div>

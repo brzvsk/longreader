@@ -14,6 +14,7 @@ interface ArticleCardProps {
   article: Article
   onArchive?: () => void
   onUnarchive?: () => void
+  onProgressUpdate?: (progress: number) => void
 }
 
 function getDomainFromUrl(url: string): string {
@@ -25,12 +26,17 @@ function getDomainFromUrl(url: string): string {
   }
 }
 
-export function ArticleCard({ article, onArchive, onUnarchive }: ArticleCardProps) {
+export function ArticleCard({ article, onArchive, onUnarchive, onProgressUpdate }: ArticleCardProps) {
   const sourceName = getDomainFromUrl(article.metadata.source_url)
   const [progress, setProgress] = useState(article.progress.percentage)
   const isCompleted = progress === 100
   const isArchived = !!article.timestamps.archived_at
   
+  const handleProgressUpdate = (newProgress: number) => {
+    setProgress(newProgress)
+    onProgressUpdate?.(newProgress)
+  }
+
   return (
     <Link href={`/article/${article._id}`}>
       <div className={cn(
@@ -68,7 +74,7 @@ export function ArticleCard({ article, onArchive, onUnarchive }: ArticleCardProp
             <ArticleCardMenu 
               articleId={article._id} 
               sourceUrl={article.metadata.source_url}
-              onProgressUpdate={setProgress}
+              onProgressUpdate={handleProgressUpdate}
               onArchive={onArchive}
               onUnarchive={onUnarchive}
               progress={progress}
