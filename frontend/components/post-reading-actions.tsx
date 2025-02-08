@@ -126,10 +126,10 @@ export function PostReadingActions({
   return (
     <>
       {/* Progress bar */}
-      <div className="fixed bottom-0 left-0 right-0 z-50">
-        <div className="h-1 bg-muted">
+      <div className="fixed bottom-0 left-0 right-0 z-[60] bg-[var(--tg-bg-color)]">
+        <div className="h-1 bg-[var(--tg-hint-color)]/30">
           <div 
-            className="h-full bg-foreground transition-all duration-300" 
+            className="h-full transition-all duration-300 bg-gradient-to-r from-purple-400 to-pink-600"
             style={{ width: `${progress}%` }}
           />
         </div>
@@ -137,16 +137,27 @@ export function PostReadingActions({
 
       {/* Action buttons */}
       <div className={cn(
-        "fixed bottom-0 left-0 right-0 bg-background/80 backdrop-blur-sm border-t transition-transform duration-500 ease-in-out transform z-40",
+        "fixed bottom-1 left-0 right-0 bg-[var(--tg-bg-color)] border-t border-[var(--tg-hint-color)]/20 transition-transform duration-500 ease-in-out transform z-40 shadow-sm",
         isVisible ? "translate-y-0" : "translate-y-full"
       )}>
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-center gap-4">
-            <Button variant="outline" size="lg" className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              size="lg" 
+              className="flex items-center gap-2 border-[var(--tg-hint-color)] text-[var(--tg-text-color)] hover:bg-[var(--tg-hint-color)]/10"
+            >
               <Share className="w-4 h-4" />
               Share
             </Button>
-            <Button size="lg" className="flex items-center gap-2">
+            <Button 
+              size="lg" 
+              className="flex items-center gap-2"
+              style={{
+                backgroundColor: 'var(--tg-button-color)',
+                color: 'var(--tg-button-text-color)'
+              }}
+            >
               <Archive className="w-4 h-4" />
               Archive
             </Button>

@@ -39,6 +39,7 @@ interface MenuAction {
   onClick: () => void | Promise<void>
   className?: string
   disabled?: boolean
+  style?: React.CSSProperties
 }
 
 export function ArticleCardMenu({ 
@@ -82,8 +83,8 @@ export function ArticleCardMenu({
       icon: Headphones,
       label: "Listen",
       onClick: () => {},
-      className: "text-muted-foreground",
       disabled: true,
+      style: { color: 'var(--tg-hint-color)' }
     },
     {
       icon: Send,
@@ -125,7 +126,7 @@ export function ArticleCardMenu({
       icon: Trash2,
       label: "Remove",
       onClick: () => onDelete?.(),
-      className: "text-red-600",
+      style: { color: 'var(--tg-destructive)' }
     },
   ]
 
@@ -134,11 +135,19 @@ export function ArticleCardMenu({
       <DropdownMenu open={open} onOpenChange={setOpen}>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" size="icon" className="h-8 w-8">
-            <MoreVertical className="h-4 w-4 text-muted-foreground" />
+            <MoreVertical className="h-4 w-4" style={{ color: 'var(--tg-hint-color)' }} />
             <span className="sr-only">Open menu</span>
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
+        <DropdownMenuContent 
+          align="end" 
+          className="bg-transparent border-none shadow-lg"
+          style={{ 
+            backgroundColor: 'var(--tg-bg-color)',
+            color: 'var(--tg-text-color)',
+            boxShadow: '0 8px 24px rgba(0, 0, 0, 0.2)'
+          }}
+        >
           {menuItems.map((item) => (
             <DropdownMenuItem
               key={item.label}
@@ -146,10 +155,22 @@ export function ArticleCardMenu({
                 await item.onClick()
                 setOpen(false)
               }}
-              className={item.className}
               disabled={item.disabled}
+              className="hover:bg-opacity-10 focus:bg-opacity-10 focus:bg-[var(--tg-hint-color)] hover:bg-[var(--tg-hint-color)]"
+              style={{
+                color: item.disabled ? 'var(--tg-hint-color)' : 
+                      item.label === 'Remove' ? 'var(--tg-destructive)' : 
+                      'var(--tg-text-color)'
+              }}
             >
-              <item.icon className="mr-2 h-4 w-4" />
+              <item.icon 
+                className="mr-2 h-4 w-4" 
+                style={{
+                  color: item.disabled ? 'var(--tg-hint-color)' : 
+                        item.label === 'Remove' ? 'var(--tg-destructive)' : 
+                        'var(--tg-text-color)'
+                }} 
+              />
               {item.label}
             </DropdownMenuItem>
           ))}

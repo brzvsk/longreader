@@ -110,10 +110,12 @@ export function UserArticlesList() {
     <div className="flex flex-col gap-8">
       {inProgressArticles.length > 0 && (
         <section className="space-y-4">
-          <h2 className="text-2xl font-bold flex items-center gap-2">
-            <span>🎯</span>
-            <span className="bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-600">Continue Reading</span>
-          </h2>
+          <div className="sticky top-0 -mx-6 px-6 bg-white dark:bg-gray-950 z-10 py-4">
+            <h2 className="text-2xl font-bold flex items-center gap-2">
+              <span>🎯</span>
+              <span className="bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-600">Continue Reading</span>
+            </h2>
+          </div>
           <div className="flex flex-col gap-4">
             {inProgressArticles.map((article) => (
               <ArticleCard 
@@ -129,29 +131,31 @@ export function UserArticlesList() {
       )}
 
       <section className="space-y-4">
-        <div className="flex gap-6 items-center">
-          <button
-            onClick={() => setActiveView('all')}
-            className="text-2xl font-bold flex items-center gap-2"
-          >
-            <span>💫</span>
-            <span className={cn(
-              activeView === 'all'
-                ? "bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-emerald-400"
-                : "text-gray-400"
-            )}>Unread</span>
-          </button>
-          <button
-            onClick={() => setActiveView('archive')}
-            className="text-2xl font-bold flex items-center gap-2"
-          >
-            <span>📦</span>
-            <span className={cn(
-              activeView === 'archive'
-                ? "bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-emerald-400"
-                : "text-gray-400"
-            )}>Archive</span>
-          </button>
+        <div className="sticky top-0 -mx-6 px-6 bg-white dark:bg-gray-950 z-10 py-4">
+          <div className="flex gap-6 items-center">
+            <button
+              onClick={() => setActiveView('all')}
+              className="text-2xl font-bold flex items-center gap-2"
+            >
+              <span>💫</span>
+              <span className={cn(
+                activeView === 'all'
+                  ? "bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-emerald-400"
+                  : "text-gray-400"
+              )}>Unread</span>
+            </button>
+            <button
+              onClick={() => setActiveView('archive')}
+              className="text-2xl font-bold flex items-center gap-2"
+            >
+              <span>📦</span>
+              <span className={cn(
+                activeView === 'archive'
+                  ? "bg-clip-text text-transparent bg-gradient-to-r from-amber-400 to-orange-600"
+                  : "text-gray-400"
+              )}>Archive</span>
+            </button>
+          </div>
         </div>
         <div className="flex flex-col gap-4">
           {viewArticles.map((article) => (
