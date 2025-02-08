@@ -110,7 +110,7 @@ export function UserArticlesList() {
     <div className="flex flex-col gap-8">
       {inProgressArticles.length > 0 && (
         <section className="space-y-4">
-          <div className="sticky top-0 -mx-6 px-6 bg-white dark:bg-gray-950 z-10 py-4">
+          <div className="sticky top-0 -mx-6 px-6 z-10 py-4" style={{ backgroundColor: 'var(--tg-theme-bg-color)' }}>
             <h2 className="text-2xl font-bold flex items-center gap-2">
               <span>🎯</span>
               <span className="bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-600">Continue Reading</span>
@@ -131,7 +131,7 @@ export function UserArticlesList() {
       )}
 
       <section className="space-y-4">
-        <div className="sticky top-0 -mx-6 px-6 bg-white dark:bg-gray-950 z-10 py-4">
+        <div className="sticky top-0 -mx-6 px-6 z-10 py-4" style={{ backgroundColor: 'var(--tg-theme-bg-color)' }}>
           <div className="flex gap-6 items-center">
             <button
               onClick={() => setActiveView('all')}
