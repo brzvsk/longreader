@@ -1,9 +1,10 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 import logging
 import sys
 from logging.handlers import RotatingFileHandler
 import os
+from datetime import datetime
 
 from .models.article import UserArticle, UserArticleFlat, UserArticleFlatCollection
 from .models.auth import AuthResponse, TelegramAuthRequest
@@ -17,22 +18,44 @@ from .services.article_service import (
 )
 from .services.auth_service import authenticate_telegram_user
 from .database import create_indexes
+from .services.parser_service import ParserService
+from pydantic import BaseModel
 
 # Configure logging
 logger = logging.getLogger()
-logger.setLevel(logging.INFO)  # Changed from DEBUG to INFO
+logger.setLevel(logging.INFO)
 
 # Console handler with INFO level
 console_handler = logging.StreamHandler(sys.stdout)
 console_handler.setLevel(logging.INFO)
-console_format = logging.Formatter('%(levelname)s: %(message)s')
+console_format = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 console_handler.setFormatter(console_format)
 
-# Add handler to the logger
+# File handler with DEBUG level
+log_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'logs')
+os.makedirs(log_dir, exist_ok=True)
+
+file_handler = RotatingFileHandler(
+    os.path.join(log_dir, 'app.log'),
+    maxBytes=10*1024*1024,  # 10MB
+    backupCount=5
+)
+file_handler.setLevel(logging.DEBUG)
+file_format = logging.Formatter(
+    '%(asctime)s - %(name)s - %(levelname)s - [%(filename)s:%(lineno)d] - %(message)s'
+)
+file_handler.setFormatter(file_format)
+
+# Add handlers to the logger
 logger.addHandler(console_handler)
+logger.addHandler(file_handler)
 
 # Set uvicorn access logger to warning level to reduce noise
 logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
+
+# Create module logger
+logger = logging.getLogger(__name__)
+logger.info(f"Application starting at {datetime.utcnow().isoformat()}")
 
 app = FastAPI(
     title="LongReader API",
@@ -110,3 +133,39 @@ async def telegram_auth(auth_data: TelegramAuthRequest):
     except Exception as e:
         logger.exception("Unexpected error during authentication")
         raise HTTPException(status_code=500, detail="Internal server error")
+
+class ParseArticleRequest(BaseModel):
+    url: str
+
+@app.post("/users/{user_id}/articles/parse", response_model=dict)
+async def parse_article(user_id: str, request: ParseArticleRequest, background_tasks: BackgroundTasks):
+    """Parse article and create user-article link"""
+    logger = logging.getLogger(__name__)
+    logger.info(f"Received parse request for URL: {request.url} from user: {user_id}")
+    
+    try:
+        # Create article and user article link
+        logger.debug(f"Creating article and user-article link for URL: {request.url}")
+        article, user_article = await ParserService.create_parsing_article(request.url, user_id)
+        logger.info(f"Created article {article['_id']} and user-article link {user_article['_id']}")
+        
+        # Start background parsing task
+        logger.debug(f"Starting background parsing task for article: {article['_id']}")
+        background_tasks.add_task(ParserService.parse_article, article['_id'])
+        logger.info(f"Background parsing task scheduled for article: {article['_id']}")
+        
+        response_data = {
+            "article_id": str(article['_id']),
+            "user_article_id": str(user_article['_id']),
+            "status": article['status'],
+            "url": request.url
+        }
+        logger.debug(f"Returning response: {response_data}")
+        return response_data
+        
+    except Exception as e:
+        logger.error(f"Failed to process parse request for URL: {request.url}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to parse article: {str(e)}"
+        )

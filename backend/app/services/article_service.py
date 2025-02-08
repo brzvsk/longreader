@@ -9,7 +9,7 @@ from datetime import datetime
 async def get_user_articles_flat(user_id: str) -> UserArticleFlatCollection:
     """Get all articles saved by a user in a flattened structure (without content)"""
     # Get user's article references
-    cursor = user_articles.find({"user_id": user_id, "timestamps.deleted_at": None})
+    cursor = user_articles.find({"user_id": ObjectId(user_id), "timestamps.deleted_at": None})
     user_article_list = [UserArticle(**doc) async for doc in cursor]
     
     if not user_article_list:
@@ -53,7 +53,7 @@ async def get_user_article_flat(user_id: str, article_id: str) -> UserArticleFla
     """Get a specific article saved by the user in a flattened structure (always includes content)"""
     # Fetch the user_article record
     ua = await user_articles.find_one({
-        "user_id": user_id,
+        "user_id": ObjectId(user_id),
         "article_id": ObjectId(article_id),
         "timestamps.deleted_at": None
     })
@@ -82,7 +82,7 @@ async def get_user_article_flat(user_id: str, article_id: str) -> UserArticleFla
             deleted_at=user_article.timestamps.deleted_at,
             created_at=article.created_at
         )
-    ) 
+    )
 
 async def update_article_progress(user_id: str, article_id: str, progress_percentage: float) -> UserArticle:
     """Update reading progress for a user's article"""
@@ -90,7 +90,7 @@ async def update_article_progress(user_id: str, article_id: str, progress_percen
         # Update progress
         result = await user_articles.find_one_and_update(
             {
-                "user_id": user_id,
+                "user_id": ObjectId(user_id),
                 "article_id": ObjectId(article_id),
                 "timestamps.deleted_at": None
             },
@@ -115,7 +115,7 @@ async def archive_user_article(user_id: str, article_id: str) -> UserArticle:
     try:
         result = await user_articles.find_one_and_update(
             {
-                "user_id": user_id,
+                "user_id": ObjectId(user_id),
                 "article_id": ObjectId(article_id),
                 "timestamps.deleted_at": None
             },
@@ -139,7 +139,7 @@ async def unarchive_user_article(user_id: str, article_id: str) -> UserArticle:
     try:
         result = await user_articles.find_one_and_update(
             {
-                "user_id": user_id,
+                "user_id": ObjectId(user_id),
                 "article_id": ObjectId(article_id),
                 "timestamps.deleted_at": None
             },
@@ -163,7 +163,7 @@ async def delete_user_article(user_id: str, article_id: str) -> UserArticle:
     try:
         result = await user_articles.find_one_and_update(
             {
-                "user_id": user_id,
+                "user_id": ObjectId(user_id),
                 "article_id": ObjectId(article_id),
                 "timestamps.deleted_at": None
             },
