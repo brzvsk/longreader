@@ -30,7 +30,7 @@ export function ClientArticle({ articleId }: ClientArticleProps) {
         }
         
         setArticle(fetchedArticle)
-      } catch (_) {
+      } catch {
         setError(true)
       } finally {
         setLoading(false)

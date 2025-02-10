@@ -1,0 +1,8 @@
+{
+  "scripts": {
+    "vercel-build": "next build"
+  },
+  "devDependencies": {
+    "@cloudflare/next-on-pages": "1"
+  }
+}

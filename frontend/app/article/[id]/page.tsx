@@ -2,15 +2,17 @@ import { Suspense } from "react"
 import { ClientArticle } from "./client-article"
 import { Skeleton } from "@/components/ui/skeleton"
 
+export const runtime = 'edge'
+
 interface PageProps {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }
 
-export default async function ArticlePage({ params }: PageProps) {
-  const resolvedParams = await params
+export default async function Page({ params }: PageProps) {
+  const { id } = await params
   return (
     <Suspense fallback={<ArticleSkeleton />}>
-      <ClientArticle articleId={resolvedParams.id} />
+      <ClientArticle articleId={id} />
     </Suspense>
   )
 }

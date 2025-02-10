@@ -19,6 +19,7 @@ export function ReadingProgress({
   const params = useParams()
   const articleId = params.id as string
   const [hasShownConfetti, setHasShownConfetti] = useState(false)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [progress, setProgress] = useState(initialProgress)
   const updateTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const lastProgressRef = useRef(initialProgress)

@@ -38,6 +38,11 @@ interface WebApp {
     isExpanded: boolean;
     viewportHeight: number;
     viewportStableHeight: number;
+    BackButton: {
+        show: () => void;
+        hide: () => void;
+        onClick: (callback: () => void) => void;
+    };
     ready(): void;
     expand(): void;
     close(): void;
