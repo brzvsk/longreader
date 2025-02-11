@@ -10,7 +10,7 @@ fun main() {
         if (!botKey.isNullOrEmpty()) {
             println("Bot key loaded successfully!")
         } else {
-            println("BOT_KEY is not set!")
+            println("READ_LATER_BOT_KEY is not set!")
         }
         val botsApplication = TelegramBotsLongPollingApplication()
         val bot = ReadLaterBot()
