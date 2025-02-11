@@ -201,9 +201,15 @@ class ReadLaterBot : LongPollingSingleThreadUpdateConsumer {
         // Create the request body
         val body = RequestBody.create(mediaType, jsonBody)
 
+        val baseUrl = System.getenv("NEXT_PUBLIC_API_URL")
+        if (baseUrl.isNullOrBlank()) {
+            println("NEXT_PUBLIC_API_URL is null or blank")
+            return
+        }
+
         // Build the request with dynamic user ID
         val request = Request.Builder()
-            .url("http://localhost:8000/users/$id/articles/parse") // Use id dynamically
+            .url("$baseUrl/users/$id/articles/parse") // Use id dynamically
             .post(body)
             .build()
 
