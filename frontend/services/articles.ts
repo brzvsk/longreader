@@ -1,10 +1,5 @@
 import { Article, ArticleContent } from "@/types/article"
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
-
-const DEFAULT_HEADERS = {
-  'Content-Type': 'application/json',
-}
+import { api } from '@/lib/api'
 
 function getUserId(): string {
   const userId = localStorage.getItem('user_id')
@@ -14,65 +9,30 @@ function getUserId(): string {
   return userId
 }
 
-async function apiRequest<T>(
-  endpoint: string, 
-  options: RequestInit = {}
-): Promise<T> {
-  try {
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-      ...options,
-      headers: {
-        ...DEFAULT_HEADERS,
-        ...options.headers,
-      },
-    })
-    
-    if (!response.ok) {
-      throw new Error(`API request failed: ${response.statusText}`)
-    }
-    
-    // For DELETE requests or other requests that might not return data
-    if (response.status === 204) {
-      return {} as T
-    }
-    
-    return await response.json()
-  } catch (error) {
-    console.error('API request error:', error)
-    throw error
-  }
-}
-
 export async function getUserArticles(): Promise<Article[]> {
   const userId = getUserId()
-  const response = await apiRequest<{ articles: Article[] }>(`/users/${userId}/articles`)
-  return response.articles
+  const response = await api.get<{ articles: Article[] }>(`/users/${userId}/articles`)
+  return response.data.articles
 }
 
 export async function getUserArticle(articleId: string): Promise<ArticleContent> {
   const userId = getUserId()
-  return apiRequest<ArticleContent>(`/users/${userId}/articles/${articleId}`)
+  return (await api.get<ArticleContent>(`/users/${userId}/articles/${articleId}`)).data
 }
 
 export async function updateArticleProgress(articleId: string, progress: number): Promise<void> {
   const userId = getUserId()
-  return apiRequest<void>(`/users/${userId}/articles/${articleId}/progress?progress_percentage=${progress}`, {
-    method: 'PUT'
-  })
+  await api.put(`/users/${userId}/articles/${articleId}/progress?progress_percentage=${progress}`)
 }
 
 export async function archiveArticle(articleId: string): Promise<void> {
   const userId = getUserId()
-  return apiRequest<void>(`/users/${userId}/articles/${articleId}/archive`, {
-    method: 'PUT'
-  })
+  await api.put(`/users/${userId}/articles/${articleId}/archive`)
 }
 
 export async function unarchiveArticle(articleId: string): Promise<void> {
   const userId = getUserId()
-  return apiRequest<void>(`/users/${userId}/articles/${articleId}/unarchive`, {
-    method: 'PUT'
-  })
+  await api.put(`/users/${userId}/articles/${articleId}/unarchive`)
 }
 
 // export async function deleteArticle(userId: string, articleId: string): Promise<void> {

@@ -45,4 +45,23 @@ async def get_user_by_id(user_id: str) -> User:
             raise HTTPException(status_code=404, detail="User not found")
         return User(**user)
     except Exception as e:
-        raise HTTPException(status_code=404, detail="Invalid user ID") 
+        raise HTTPException(status_code=404, detail="Invalid user ID")
+
+async def get_or_create_by_telegram_id(telegram_id: str) -> User:
+    """Get a user by their Telegram ID or create if not exists"""
+    try:
+        # Try to get user by Telegram ID first
+        user = await users.find_one({"telegram_id": telegram_id})
+        if user:
+            return User(**user)
+        
+        # If not found, create new user
+        user = User(telegram_id=telegram_id)
+        user_dict = user.model_dump(by_alias=True, exclude={"id"})
+        result = await users.insert_one(user_dict)
+        
+        # Return created user
+        created = await users.find_one({"_id": result.inserted_id})
+        return User(**created)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get or create user: {str(e)}") 
