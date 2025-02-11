@@ -20,7 +20,7 @@ from .services.article_service import (
 from .services.auth_service import authenticate_telegram_user
 from .database import create_indexes
 from .services.parser_service import ParserService
-from .services.user_service import get_user_by_telegram_id, get_user_by_id
+from .services.user_service import get_user_by_telegram_id, get_user_by_id, get_or_create_by_telegram_id
 from pydantic import BaseModel
 
 # Configure logging
@@ -146,17 +146,9 @@ async def parse_article(user_id: str, request: ParseArticleRequest, background_t
     logger.info(f"Received parse request for URL: {request.url} from user: {user_id}")
     
     try:
-        # Try to get user by ObjectId first
-        try:
-            user = await get_user_by_id(user_id)
-            actual_user_id = str(user.id)
-        except HTTPException:
-            # If not found by ObjectId, try by Telegram ID
-            try:
-                user = await get_user_by_telegram_id(user_id)
-                actual_user_id = str(user.id)
-            except HTTPException:
-                raise HTTPException(status_code=404, detail="User not found")
+        # Get or create user by telegram ID
+        user = await get_or_create_by_telegram_id(user_id)
+        actual_user_id = str(user.id)
         
         # Create article and user article link
         logger.debug(f"Creating article and user-article link for URL: {request.url}")
