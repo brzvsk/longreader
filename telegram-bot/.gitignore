@@ -29,7 +29,6 @@ out/
 *.iws
 *.iml
 *.ipr
-pom.xml
 
 ### Eclipse ###
 .apt_generated
