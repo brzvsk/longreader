@@ -6,11 +6,11 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException
 fun main() {
 
     try {
-        val botKey = System.getenv("READ_LATER_BOT_KEY")
+        val botKey = System.getenv("TELEGRAM_BOT_TOKEN")
         if (!botKey.isNullOrEmpty()) {
             println("Bot key loaded successfully!")
         } else {
-            println("READ_LATER_BOT_KEY is not set!")
+            println("TELEGRAM_BOT_TOKEN is not set!")
         }
         val botsApplication = TelegramBotsLongPollingApplication()
         val bot = ReadLaterBot()

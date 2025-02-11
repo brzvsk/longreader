@@ -1,5 +1,6 @@
 package goldenluk.readlaterbpt
 
+import okhttp3.MediaType.Companion.toMediaType
 import org.telegram.telegrambots.client.okhttp.OkHttpTelegramClient
 import org.telegram.telegrambots.longpolling.util.LongPollingSingleThreadUpdateConsumer
 import org.telegram.telegrambots.meta.api.objects.Update
@@ -10,10 +11,14 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKe
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.*
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.RequestBody
+import okhttp3.Response
 
 class ReadLaterBot : LongPollingSingleThreadUpdateConsumer {
 
-    private val telegramClient = OkHttpTelegramClient(System.getenv("READ_LATER_BOT_KEY").orEmpty())
+    private val telegramClient = OkHttpTelegramClient(System.getenv("TELEGRAM_BOT_TOKEN").orEmpty())
     private val dbHelper = DatabaseHelper()
 
     override fun consume(update: Update?) {
@@ -98,56 +103,62 @@ class ReadLaterBot : LongPollingSingleThreadUpdateConsumer {
         var sm = ""
         var originalMessageLink = ""
 
-        if (forwardOrigin != null) {
-            if (forwardOrigin is MessageOriginUser) {
-                val who = if (forwardOrigin.senderUser.isBot) {
-                    "bot"
-                } else {
-                    "user"
-                }
-                sm = "Forwarded from $who : https://t.me/${forwardOrigin.senderUser.userName}"
-            } else if (forwardOrigin is MessageOriginChat) {
-                val name = if (forwardOrigin.senderChat.userName != null) {
-                    forwardOrigin.senderChat.userName
-                } else {
-                    "Has no name or name hidden because of privacy"
-                }
-                sm = "Forwarded from group: $name"
-            } else if (forwardOrigin is MessageOriginChannel) {
-                val channelUsername = forwardOrigin.chat.userName
-                val originalMessageId = forwardOrigin.messageId
-
-                if (channelUsername != null) {
-                    originalMessageLink = "https://t.me/$channelUsername/$originalMessageId"
-                    sm = "Original Message Link: $originalMessageLink"
-                } else {
-                    sm = "Forwarded from a private channel, cannot generate a link."
-                }
-            } else if (forwardOrigin is MessageOriginHiddenUser) {
-                sm = "Forwarded from hidden user or/and private channel/group"
-            }
+        if (isLink(message.text)) {
+            sendToParser(message.text, fromId.toString())
         } else {
-            sm = "Added manually, no forward"
+            sendText(fromId, "Not a link", telegramClient)
         }
 
-        val successMessage = "New bookmark has been added! $sm"
-
-        val source = originalMessageLink.ifBlank {
-            sm
-        }
-
-        dbHelper.addBookmark(
-            fromId.toString(), Bookmark(
-                id = "${System.currentTimeMillis()}-${Math.random()}",
-                text = message.text,
-                source = source,
-                dateAdded = formattedDate,
-                status = "new"
-            ),
-            message.from.userName
-        )
-
-        sendText(fromId, successMessage, telegramClient)
+//        if (forwardOrigin != null) {
+//            if (forwardOrigin is MessageOriginUser) {
+//                val who = if (forwardOrigin.senderUser.isBot) {
+//                    "bot"
+//                } else {
+//                    "user"
+//                }
+//                sm = "Forwarded from $who : https://t.me/${forwardOrigin.senderUser.userName}"
+//            } else if (forwardOrigin is MessageOriginChat) {
+//                val name = if (forwardOrigin.senderChat.userName != null) {
+//                    forwardOrigin.senderChat.userName
+//                } else {
+//                    "Has no name or name hidden because of privacy"
+//                }
+//                sm = "Forwarded from group: $name"
+//            } else if (forwardOrigin is MessageOriginChannel) {
+//                val channelUsername = forwardOrigin.chat.userName
+//                val originalMessageId = forwardOrigin.messageId
+//
+//                if (channelUsername != null) {
+//                    originalMessageLink = "https://t.me/$channelUsername/$originalMessageId"
+//                    sm = "Original Message Link: $originalMessageLink"
+//                } else {
+//                    sm = "Forwarded from a private channel, cannot generate a link."
+//                }
+//            } else if (forwardOrigin is MessageOriginHiddenUser) {
+//                sm = "Forwarded from hidden user or/and private channel/group"
+//            }
+//        } else {
+//            sm = "Added manually, no forward"
+//        }
+//
+//        val successMessage = "New bookmark has been added! $sm"
+//
+//        val source = originalMessageLink.ifBlank {
+//            sm
+//        }
+//
+//        dbHelper.addBookmark(
+//            fromId.toString(), Bookmark(
+//                id = "${System.currentTimeMillis()}-${Math.random()}",
+//                text = message.text,
+//                source = source,
+//                dateAdded = formattedDate,
+//                status = "new"
+//            ),
+//            message.from.userName
+//        )
+//
+//        sendText(fromId, successMessage, telegramClient)
     }
 
     private fun extractId(input: String): String? {
@@ -167,6 +178,41 @@ class ReadLaterBot : LongPollingSingleThreadUpdateConsumer {
                 )
             } catch (e: Exception) {
                 e.printStackTrace()
+            }
+        }
+    }
+
+    private fun isLink(url: String): Boolean {
+        val regex = Regex("^(https?://)?(www\\.)?[a-zA-Z0-9\\-]+\\.[a-zA-Z]{2,}(/\\S*)?$")
+        return regex.matches(url)
+    }
+
+    private fun sendToParser(url: String, id: String) {
+        val client = OkHttpClient()
+
+        // Define the JSON media type
+        val mediaType = "application/json; charset=utf-8".toMediaType()
+
+        // JSON body with dynamic URL
+        val jsonBody = """{
+        "url": "$url"
+    }""".trimIndent()
+
+        // Create the request body
+        val body = RequestBody.create(mediaType, jsonBody)
+
+        // Build the request with dynamic user ID
+        val request = Request.Builder()
+            .url("http://localhost:8000/users/$id/articles/parse") // Use id dynamically
+            .post(body)
+            .build()
+
+        // Execute the request
+        client.newCall(request).execute().use { response: Response ->
+            if (!response.isSuccessful) {
+                println("Request failed: ${response.code}")
+            } else {
+                println("Response: ${response.body?.string()}")
             }
         }
     }
