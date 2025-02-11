@@ -24,3 +24,5 @@ certificates
 # vscode
 longreader.code-workspace
 .vscode/
+
+.env*

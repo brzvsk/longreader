@@ -2,59 +2,121 @@
 
 ## Overview
 
-Longreader is a Telegram mini app designed to help users save and read long articles conveniently. It addresses the common pain points of reading lengthy content by offering features such as progress tracking, sharing capabilities.
-
+Longreader is a Telegram mini app designed to help users save and read long articles conveniently. It addresses the common pain points of reading lengthy content by offering features such as progress tracking and sharing capabilities.
 
 ## Project Structure
 
-- **frontend/**: Contains the frontend application built with Next.js.
-- **telegram-bot/**: Contains the backend application for the Telegram bot.
+- **frontend/**: Next.js application for the web interface
+- **backend/**: FastAPI backend service
+- **telegram-bot/**: Kotlin-based Telegram bot service
+- **nginx.conf**: Nginx configuration for reverse proxy
+- **docker-compose.yml**: Docker composition for all services
+
+## Tech Stack
+
+- **Frontend**: Next.js
+- **Backend**: FastAPI (Python)
+- **Telegram Bot**: Kotlin, Telegram Bot API
+- **Database**: MongoDB
+- **Proxy**: Nginx
+- **Container**: Docker
 
 ## Prerequisites
 
-List any prerequisites needed to run the project, such as:
+- Docker and Docker Compose
+- Node.js 18+ (for local development)
+- Python 3.8+ (for local development)
+- JDK 8+ (for telegram bot development)
+- Maven (for telegram bot development)
 
-- Node.js
-- npm or Yarn
-- Java (for the Telegram bot)
-- Maven (for building the Telegram bot)
+## Setup
 
-## Setup // TODO: update with docker compose
+### Using Docker (Recommended)
 
-### Frontend
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/MutimTemki/longreader.git
+   cd longreader
+   ```
 
-1. Navigate to the `frontend` directory:
+2. Set up environment variables:
+   - Copy `.env.example` to `.env` in both `frontend/` and `backend/` directories
+   - Update the environment variables as needed
+
+3. Start the application:
+   ```bash
+   docker-compose up -d
+   ```
+
+   This will start all services:
+   - Frontend on port 3000
+   - Backend on port 8000
+   - MongoDB on port 27017
+   - Nginx on ports 80 and 443
+
+### Local Development
+
+#### Frontend
+
+1. Navigate to the frontend directory:
    ```bash
    cd frontend
    ```
 
 2. Install dependencies:
    ```bash
-   npm install
-   # or
    yarn install
    ```
 
-3. Run the development server:
+3. Start the development server:
    ```bash
-   npm run dev
-   # or
    yarn dev
    ```
 
-### Telegram Bot
+#### Backend
 
-1. Navigate to the `telegram-bot` directory:
+1. Navigate to the backend directory:
+   ```bash
+   cd backend
+   ```
+
+2. Create and activate a virtual environment:
+   ```bash
+   python -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   ```
+
+3. Install dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+4. Start the development server:
+   ```bash
+   uvicorn app.main:app --reload
+   ```
+
+#### Telegram Bot
+
+1. Navigate to the telegram-bot directory:
    ```bash
    cd telegram-bot
    ```
 
-2. Build the project using Maven:
+2. Set up environment variables:
+   - Create a `.env` file with the following variables:
+     ```
+     BOT_TOKEN=your_telegram_bot_token
+     BOT_USERNAME=your_bot_username
+     MONGODB_URI=mongodb://localhost:27017/longreader
+     ```
+
+3. Build the project:
    ```bash
    mvn clean install
    ```
 
-3. Run the application:
+4. Run the bot:
    ```bash
-   java -jar target/telegram-bot.jar
+   mvn exec:java
    ```
