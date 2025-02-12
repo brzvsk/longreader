@@ -7,7 +7,7 @@ import {
   Archive,
   Headphones,
   Trash2,
-  Check,
+//  Check,
   MoreVertical,
   LucideIcon,
 } from "lucide-react"
@@ -53,7 +53,7 @@ export function ArticleCardMenu({
   isArchived = false
 }: ArticleCardMenuProps) {
   const [open, setOpen] = React.useState(false)
-  const isCompleted = progress === 100
+//  const isCompleted = progress === 100
 
   const handleClick = (e: React.MouseEvent) => {
     e.preventDefault()
