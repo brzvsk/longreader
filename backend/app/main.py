@@ -5,6 +5,7 @@ import sys
 from logging.handlers import RotatingFileHandler
 import os
 from datetime import datetime
+from bson import ObjectId
 
 from .models.article import UserArticle, UserArticleFlat, UserArticleFlatCollection
 from .models.auth import AuthResponse, TelegramAuthRequest
@@ -19,6 +20,7 @@ from .services.article_service import (
 from .services.auth_service import authenticate_telegram_user
 from .database import create_indexes
 from .services.parser_service import ParserService
+from .services.user_service import get_user_by_telegram_id, get_user_by_id, get_or_create_by_telegram_id
 from pydantic import BaseModel
 
 # Configure logging
@@ -144,9 +146,13 @@ async def parse_article(user_id: str, request: ParseArticleRequest, background_t
     logger.info(f"Received parse request for URL: {request.url} from user: {user_id}")
     
     try:
+        # Get or create user by telegram ID
+        user = await get_or_create_by_telegram_id(user_id)
+        actual_user_id = str(user.id)
+        
         # Create article and user article link
         logger.debug(f"Creating article and user-article link for URL: {request.url}")
-        article, user_article = await ParserService.create_parsing_article(request.url, user_id)
+        article, user_article = await ParserService.create_parsing_article(request.url, actual_user_id)
         logger.info(f"Created article {article['_id']} and user-article link {user_article['_id']}")
         
         # Start background parsing task

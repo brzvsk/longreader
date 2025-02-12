@@ -7,7 +7,7 @@ from urllib.parse import unquote
 import json
 from fastapi import HTTPException
 from ..models.user import User
-from .user_service import create_user, get_user_by_telegram_id
+from .user_service import get_or_create_by_telegram_id
 
 BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 logger = logging.getLogger(__name__)
@@ -66,11 +66,9 @@ async def authenticate_telegram_user(
             logger.error("No user ID in auth data")
             raise HTTPException(status_code=422, detail="Missing user ID in auth data")
             
-        user = await get_user_by_telegram_id(str(user_data["id"]))
-        logger.info(f"Found existing user with ID: {user_data['id']}")
-    except HTTPException:
-        # User doesn't exist, create new one
-        logger.info(f"Creating new user with ID: {user_data['id']}")
-        user = await create_user(str(user_data["id"]), referral)
-    
-    return user 
+        user = await get_or_create_by_telegram_id(str(user_data["id"]))
+        logger.info(f"User authenticated with ID: {user_data['id']}")
+        return user
+    except Exception as e:
+        logger.error(f"Failed to get or create user: {e}")
+        raise HTTPException(status_code=500, detail="Failed to process user authentication") 

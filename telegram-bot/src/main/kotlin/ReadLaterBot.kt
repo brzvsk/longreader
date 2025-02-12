@@ -1,56 +1,34 @@
 package goldenluk.readlaterbpt
 
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
+import okhttp3.Response
 import org.telegram.telegrambots.client.okhttp.OkHttpTelegramClient
 import org.telegram.telegrambots.longpolling.util.LongPollingSingleThreadUpdateConsumer
+import org.telegram.telegrambots.meta.api.objects.CallbackQuery
 import org.telegram.telegrambots.meta.api.objects.Update
-import org.telegram.telegrambots.meta.api.objects.messageorigin.*
+import org.telegram.telegrambots.meta.api.objects.message.Message
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardRow
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
-import java.util.*
 
 class ReadLaterBot : LongPollingSingleThreadUpdateConsumer {
 
-    private val telegramClient = OkHttpTelegramClient(System.getenv("READ_LATER_BOT_KEY").orEmpty())
+    private val telegramClient = OkHttpTelegramClient(System.getenv("TELEGRAM_BOT_TOKEN").orEmpty())
     private val dbHelper = DatabaseHelper()
 
     override fun consume(update: Update?) {
         if (update == null) return
 
         if (update.hasCallbackQuery()) {
-            val callbackQuery = update.callbackQuery
-
-            val chatId = callbackQuery.message.chatId
-            val queryId = callbackQuery.id
-            val data = callbackQuery.data
-            val messageId = callbackQuery.message.messageId
-            val userId = callbackQuery.from.id
-
-            try {
-                if (data.startsWith("delete")) {
-                    val id = extractId(data)
-                    if (id != null) {
-                        dbHelper.removeBookmark(userId.toString(), id)
-                        deleteMessage(userId, telegramClient, messageId)
-                    }
-                }
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
+            handleCallbackQuery(update.callbackQuery)
             return
         }
 
         if (update.hasMessage() && update.message.isCommand) {
-            val message = update.message
-            val fromId = message.from.id
-            when (message.text) {
-                "/start" -> sendText(fromId, "Start TBD", telegramClient)
-                "/help" -> sendText(fromId, "Help TBD", telegramClient)
-                "/all" -> sendAllBookmarks(fromId)
-                "/clear_all" -> dbHelper.removeAllBookmarks(fromId.toString())
-            }
+            handleCommand(update.message)
             return
         }
 
@@ -90,13 +68,21 @@ class ReadLaterBot : LongPollingSingleThreadUpdateConsumer {
         val message = update.message
         val fromId = message.from.id
 
-        val date = LocalDateTime.now()
+        if (isLink(message.text)) {
+            sendToParser(message.text, fromId.toString())
+        } else {
+            sendText(fromId, "Not a link", telegramClient)
+        }
+
+        /*val date = LocalDateTime.now()
         val formatter = DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm", Locale.ENGLISH)
         val formattedDate = date.format(formatter)
 
         val forwardOrigin: MessageOrigin? = message.forwardOrigin
         var sm = ""
         var originalMessageLink = ""
+
+
 
         if (forwardOrigin != null) {
             if (forwardOrigin is MessageOriginUser) {
@@ -147,7 +133,7 @@ class ReadLaterBot : LongPollingSingleThreadUpdateConsumer {
             message.from.userName
         )
 
-        sendText(fromId, successMessage, telegramClient)
+        sendText(fromId, successMessage, telegramClient)*/
     }
 
     private fun extractId(input: String): String? {
@@ -155,7 +141,76 @@ class ReadLaterBot : LongPollingSingleThreadUpdateConsumer {
         return idParam?.substringAfter("id=")
     }
 
-    fun notifyChangelog() {
+    private fun isLink(url: String): Boolean {
+        val regex = Regex("^(https?://)?(www\\.)?[a-zA-Z0-9\\-]+\\.[a-zA-Z]{2,}(/\\S*)?$")
+        return regex.matches(url)
+    }
+
+    private fun sendToParser(url: String, id: String) {
+        val client = OkHttpClient()
+
+        // Define the JSON media type
+        val mediaType = "application/json; charset=utf-8".toMediaType()
+
+        // JSON body with dynamic URL
+        val jsonBody = """{
+        "url": "$url"
+    }""".trimIndent()
+
+        // Create the request body
+        val body = jsonBody.toRequestBody(mediaType)
+
+        val baseUrl = System.getenv("NEXT_PUBLIC_API_URL")
+        if (baseUrl.isNullOrBlank()) {
+            println("NEXT_PUBLIC_API_URL is null or blank")
+            return
+        }
+
+        // Build the request with dynamic user ID
+        val request = Request.Builder()
+            .url("$baseUrl/users/$id/articles/parse") // Use id dynamically
+            .post(body)
+            .build()
+
+        // Execute the request
+        client.newCall(request).execute().use { response: Response ->
+            if (!response.isSuccessful) {
+                println("Request failed: ${response.code}")
+            } else {
+                println("Response: ${response.body?.string()}")
+            }
+        }
+    }
+
+    private fun handleCallbackQuery(callbackQuery: CallbackQuery) {
+        val data = callbackQuery.data
+        val messageId = callbackQuery.message.messageId
+        val userId = callbackQuery.from.id
+
+        try {
+            if (data.startsWith("delete")) {
+                val id = extractId(data)
+                if (id != null) {
+                    dbHelper.removeBookmark(userId.toString(), id)
+                    deleteMessage(userId, telegramClient, messageId)
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    private fun handleCommand(message: Message) {
+        val fromId = message.from.id
+        when (message.text) {
+            "/start" -> sendText(fromId, "Start TBD", telegramClient)
+            "/help" -> sendText(fromId, "Help TBD", telegramClient)
+            "/all" -> sendAllBookmarks(fromId)
+            "/clear_all" -> dbHelper.removeAllBookmarks(fromId.toString())
+        }
+    }
+
+    /*fun notifyChangelog() {
         val users = dbHelper.getUsers()
         users.forEach {
             try {
@@ -169,5 +224,5 @@ class ReadLaterBot : LongPollingSingleThreadUpdateConsumer {
                 e.printStackTrace()
             }
         }
-    }
+    }*/
 }

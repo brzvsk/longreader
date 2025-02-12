@@ -6,8 +6,31 @@ import { ArticleCardSkeleton } from "@/components/article-card-skeleton"
 import { getUserArticles, archiveArticle, unarchiveArticle, updateArticleProgress } from "@/services/articles"
 import { Article } from '@/types/article'
 import { cn } from '@/lib/utils'
+import { Send } from 'lucide-react'
 
 type View = 'all' | 'archive'
+
+function EmptyState() {
+  return (
+    <div className="flex flex-col items-center justify-center py-24">
+      <div className="relative mb-6">
+        <svg width="0" height="0">
+          <linearGradient id="blue-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop stopColor="#94b8e3" offset="0%" />
+            <stop stopColor="#8ac4b0" offset="100%" />
+          </linearGradient>
+        </svg>
+        {/* <Send className="w-16 h-16" style={{ stroke: 'url(#blue-gradient)', strokeWidth: 1.6 }} /> */}
+      </div>
+      <h2 className="text-2xl text-center font-bold mb-2" style={{ color: 'var(--tg-hint-color)' }}>
+        Send link to the bot
+      </h2>
+      <p className="text-xl text-center" style={{ color: 'var(--tg-hint-color)' }}>
+        It will appear here<br />for future readings 📚
+      </p>
+    </div>
+  )
+}
 
 export function UserArticlesList() {
   const [articles, setArticles] = useState<Article[]>([])
@@ -158,15 +181,19 @@ export function UserArticlesList() {
           </div>
         </div>
         <div className="flex flex-col gap-4">
-          {viewArticles.map((article) => (
-            <ArticleCard 
-              key={article._id} 
-              article={article} 
-              onArchive={() => handleArchive(article._id)}
-              onUnarchive={() => handleUnarchive(article._id)}
-              onProgressUpdate={(progress) => handleProgressUpdate(article._id, progress)}
-            />
-          ))}
+          {viewArticles.length > 0 ? (
+            viewArticles.map((article) => (
+              <ArticleCard 
+                key={article._id} 
+                article={article} 
+                onArchive={() => handleArchive(article._id)}
+                onUnarchive={() => handleUnarchive(article._id)}
+                onProgressUpdate={(progress) => handleProgressUpdate(article._id, progress)}
+              />
+            ))
+          ) : activeView === 'all' ? (
+            <EmptyState />
+          ) : null}
         </div>
       </section>
     </div>
