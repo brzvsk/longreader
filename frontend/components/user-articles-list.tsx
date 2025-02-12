@@ -6,7 +6,6 @@ import { ArticleCardSkeleton } from "@/components/article-card-skeleton"
 import { getUserArticles, archiveArticle, unarchiveArticle, updateArticleProgress } from "@/services/articles"
 import { Article } from '@/types/article'
 import { cn } from '@/lib/utils'
-import { Send } from 'lucide-react'
 
 type View = 'all' | 'archive'
 

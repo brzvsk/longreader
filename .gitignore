@@ -25,4 +25,4 @@ certificates
 longreader.code-workspace
 .vscode/
 
-.env*
+.env
