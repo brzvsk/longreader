@@ -89,7 +89,9 @@ export function UserArticlesList() {
   }
 
   const inProgressArticles = articles
-    .filter(article => article.progress.percentage > 0 && article.progress.percentage < 100 && !article.timestamps.archived_at)
+    .filter(article => article.progress.percentage > 0 
+      // && article.progress.percentage < 100 
+      && !article.timestamps.archived_at)
     .sort((a, b) => {
       // Sort by last updated progress time if available
       if (a.progress.updated_at && b.progress.updated_at) {
@@ -105,7 +107,7 @@ export function UserArticlesList() {
       return !article.timestamps.archived_at && article.progress.percentage === 0;
     } else {
       // Show both archived articles and completed (100% read) articles in Archive
-      return article.timestamps.archived_at || article.progress.percentage === 100;
+      return article.timestamps.archived_at;
     }
   });
 
