@@ -13,7 +13,7 @@ private var database: MongoDatabase? = null
 class DatabaseHelper {
 
     fun initClient() {
-        client = KMongo.createClient("mongodb://localhost:27017")
+        client = KMongo.createClient("mongodb://mongodb:27017")
         database = client?.getDatabase("myBotDB")
         println("client and database set up")
     }
