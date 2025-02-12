@@ -1,11 +1,11 @@
 'use client'
 
-import { Share, Archive } from "lucide-react"
+import { Share, Archive, Check } from "lucide-react"
 import { Button } from "./ui/button"
 import { cn } from "@/lib/utils"
 import { useEffect, useState, useCallback, useRef } from 'react'
 import confetti from 'canvas-confetti'
-import { updateArticleProgress } from '@/services/articles'
+import { updateArticleProgress, archiveArticle } from '@/services/articles'
 import { useParams } from 'next/navigation'
 
 interface PostReadingActionsProps {
@@ -24,8 +24,16 @@ export function PostReadingActions({
   const [hasShownConfetti, setHasShownConfetti] = useState(false)
   const [progress, setProgress] = useState(initialProgress)
   const [isVisible, setIsVisible] = useState(initialIsVisible)
+  const [isArchived, setIsArchived] = useState(false)
   const updateTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const lastProgressRef = useRef(initialProgress)
+
+  // Auto-archive when actions become visible
+  useEffect(() => {
+    if (isVisible && !isArchived) {
+      handleArchive()
+    }
+  }, [isVisible])
 
   // Initial scroll restoration
   useEffect(() => {
@@ -94,7 +102,7 @@ export function PostReadingActions({
       onProgressChange?.(boundedProgress)
 
       // Show actions when near the end (90% or more)
-      if (boundedProgress >= 90) {
+      if (boundedProgress >= 100) {
         setIsVisible(true)
       } else {
         setIsVisible(false)
@@ -123,6 +131,15 @@ export function PostReadingActions({
     }
   }, [onProgressChange, updateProgress, hasShownConfetti, fireConfetti])
 
+  const handleArchive = async () => {
+    try {
+      await archiveArticle(articleId)
+      setIsArchived(true)
+    } catch (error) {
+      console.error('Failed to archive article:', error)
+    }
+  }
+
   return (
     <>
       {/* Progress bar */}
@@ -143,14 +160,6 @@ export function PostReadingActions({
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-center gap-4">
             <Button 
-              variant="outline" 
-              size="lg" 
-              className="flex items-center gap-2 border-[var(--tg-hint-color)] text-[var(--tg-text-color)] hover:bg-[var(--tg-hint-color)]/10"
-            >
-              <Share className="w-4 h-4" />
-              Share
-            </Button>
-            <Button 
               size="lg" 
               className="flex items-center gap-2"
               style={{
@@ -158,8 +167,30 @@ export function PostReadingActions({
                 color: 'var(--tg-button-text-color)'
               }}
             >
-              <Archive className="w-4 h-4" />
-              Archive
+              <Share className="w-4 h-4" />
+              Share
+            </Button>
+            <Button 
+              variant="outline" 
+              size="lg" 
+              className={cn(
+                "flex items-center gap-2 border-[var(--tg-hint-color)] text-[var(--tg-text-color)] transition-all duration-300",
+                isArchived ? "bg-[var(--tg-hint-color)]/10" : "hover:bg-[var(--tg-hint-color)]/10"
+              )}
+              onClick={handleArchive}
+              disabled={isArchived}
+            >
+              {isArchived ? (
+                <>
+                  <Check className="w-4 h-4" />
+                  Archived
+                </>
+              ) : (
+                <>
+                  <Archive className="w-4 h-4" />
+                  Archive
+                </>
+              )}
             </Button>
           </div>
         </div>

@@ -62,15 +62,6 @@ export function ArticleCardMenu({
 
   const menuItems: MenuAction[] = [
     {
-      icon: Check,
-      label: isCompleted ? "Mark as Unread" : "Mark as Read",
-      onClick: async () => {
-        const newProgress = isCompleted ? 0 : 100
-        await updateArticleProgress(articleId, newProgress)
-        onProgressUpdate?.(newProgress)
-      },
-    },
-    {
       icon: Headphones,
       label: "Listen",
       onClick: () => {},
@@ -107,6 +98,10 @@ export function ArticleCardMenu({
         if (isArchived) {
           await unarchiveArticle(articleId)
           onUnarchive?.()
+          if (progress === 100) {
+            await updateArticleProgress(articleId, 0)
+            onProgressUpdate?.(0)
+          }
         } else {
           await archiveArticle(articleId)
           onArchive?.()
