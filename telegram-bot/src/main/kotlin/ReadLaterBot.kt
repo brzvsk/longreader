@@ -175,8 +175,10 @@ class ReadLaterBot : LongPollingSingleThreadUpdateConsumer {
         // Execute the request
         client.newCall(request).execute().use { response: Response ->
             if (!response.isSuccessful) {
+                sendText(id.toLong(), "Saving is failed :(", telegramClient)
                 println("Request failed: ${response.code}")
             } else {
+                sendText(id.toLong(), "Saved \uD83D\uDC4D", telegramClient)
                 println("Response: ${response.body?.string()}")
             }
         }
