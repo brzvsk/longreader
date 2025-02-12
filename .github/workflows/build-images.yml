@@ -1,1 +1,50 @@
-# TODO
+name: Build Docker Images
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-backend:
+    name: Build Backend Image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Log in to GitHub Container Registry
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Build and Push Backend Image
+        run: |
+          docker build -t ghcr.io/${{ github.repository_owner }}/backend:latest ./backend
+          docker push ghcr.io/${{ github.repository_owner }}/backend:latest
+
+  build-frontend:
+    name: Build Frontend Image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Log in to GitHub Container Registry
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Build and Push Frontend Image
+        run: |
+          docker build -t ghcr.io/${{ github.repository_owner }}/frontend:latest ./frontend
+          docker push ghcr.io/${{ github.repository_owner }}/frontend:latest
+
+  build-telegram-bot:
+    name: Build Telegram Bot Image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Log in to GitHub Container Registry
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Build and Push Telegram Bot Image
+        run: |
+          docker build -t ghcr.io/${{ github.repository_owner }}/telegram-bot:latest ./telegram-bot
+          docker push ghcr.io/${{ github.repository_owner }}/telegram-bot:latest
