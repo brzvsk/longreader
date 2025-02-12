@@ -5,7 +5,7 @@ on:
 
 permissions:
   contents: read
-  packages: write
+  packages: write  # ✅ Required to push images to GHCR
 
 jobs:
   build-backend:
@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Log in to GitHub Container Registry
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
@@ -21,15 +21,16 @@ jobs:
       - name: Build and Push Backend Image
         run: |
           REPO_OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
-          docker build -t ghcr.io/$REPO_OWNER/backend:latest ./backend
-          docker push ghcr.io/$REPO_OWNER/backend:latest
+          IMAGE_NAME="ghcr.io/$REPO_OWNER/backend:latest"
+          docker build -t $IMAGE_NAME ./backend
+          docker push $IMAGE_NAME
 
   build-frontend:
     name: Build Frontend Image
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Log in to GitHub Container Registry
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
@@ -37,15 +38,16 @@ jobs:
       - name: Build and Push Frontend Image
         run: |
           REPO_OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
-          docker build -t ghcr.io/$REPO_OWNER/frontend:latest ./frontend
-          docker push ghcr.io/$REPO_OWNER/frontend:latest
+          IMAGE_NAME="ghcr.io/$REPO_OWNER/frontend:latest"
+          docker build -t $IMAGE_NAME ./frontend
+          docker push $IMAGE_NAME
 
   build-telegram-bot:
     name: Build Telegram Bot Image
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Log in to GitHub Container Registry
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
@@ -53,5 +55,6 @@ jobs:
       - name: Build and Push Telegram Bot Image
         run: |
           REPO_OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
-          docker build -t ghcr.io/$REPO_OWNER/telegram-bot:latest ./telegram-bot
-          docker push ghcr.io/$REPO_OWNER/telegram-bot:latest
+          IMAGE_NAME="ghcr.io/$REPO_OWNER/telegram-bot:latest"
+          docker build -t $IMAGE_NAME ./telegram-bot
+          docker push $IMAGE_NAME
