@@ -16,8 +16,9 @@ jobs:
 
       - name: Build and Push Backend Image
         run: |
-          docker build -t ghcr.io/${{ github.repository_owner }}/backend:latest ./backend
-          docker push ghcr.io/${{ github.repository_owner }}/backend:latest
+          REPO_OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          docker build -t ghcr.io/$REPO_OWNER/backend:latest ./backend
+          docker push ghcr.io/$REPO_OWNER/backend:latest
 
   build-frontend:
     name: Build Frontend Image
@@ -31,8 +32,9 @@ jobs:
 
       - name: Build and Push Frontend Image
         run: |
-          docker build -t ghcr.io/${{ github.repository_owner }}/frontend:latest ./frontend
-          docker push ghcr.io/${{ github.repository_owner }}/frontend:latest
+          REPO_OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          docker build -t ghcr.io/$REPO_OWNER/frontend:latest ./frontend
+          docker push ghcr.io/$REPO_OWNER/frontend:latest
 
   build-telegram-bot:
     name: Build Telegram Bot Image
@@ -46,5 +48,6 @@ jobs:
 
       - name: Build and Push Telegram Bot Image
         run: |
-          docker build -t ghcr.io/${{ github.repository_owner }}/telegram-bot:latest ./telegram-bot
-          docker push ghcr.io/${{ github.repository_owner }}/telegram-bot:latest
+          REPO_OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          docker build -t ghcr.io/$REPO_OWNER/telegram-bot:latest ./telegram-bot
+          docker push ghcr.io/$REPO_OWNER/telegram-bot:latest
