@@ -7,6 +7,7 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
 import org.telegram.telegrambots.client.okhttp.OkHttpTelegramClient
 import org.telegram.telegrambots.longpolling.util.LongPollingSingleThreadUpdateConsumer
+import org.telegram.telegrambots.meta.TelegramUrl
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery
 import org.telegram.telegrambots.meta.api.objects.Update
 import org.telegram.telegrambots.meta.api.objects.message.Message
@@ -16,7 +17,13 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKe
 
 class ReadLaterBot : LongPollingSingleThreadUpdateConsumer {
 
-    private val telegramClient = OkHttpTelegramClient(System.getenv("TELEGRAM_BOT_TOKEN").orEmpty())
+    private val botEnvironment = System.getenv("TELEGRAM_BOT_ENVIRONMENT")
+    private val telegramUrl = if (botEnvironment == "prod") {
+       TelegramUrl("https", "api.telegram.org", 443, false)
+    } else {
+       TelegramUrl("https", "api.telegram.org", 443, true)
+    }
+    private val telegramClient = OkHttpTelegramClient(System.getenv("TELEGRAM_BOT_TOKEN").orEmpty(), telegramUrl)
     private val dbHelper = DatabaseHelper()
 
     override fun consume(update: Update?) {
