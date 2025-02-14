@@ -46,17 +46,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 setError(null);
                 // Check if we have stored auth data
                 console.log('Checking stored auth data...');
-                if (auth.isAuthenticated()) {
-                    console.log('Found stored auth data');
-                    const { userId, telegramId } = auth.getUserIds();
-                    console.log('User IDs retrieved:', { userId, telegramId });
+                // if (auth.isAuthenticated()) {
+                //     console.log('Found stored auth data');
+                //     const { userId, telegramId } = auth.getUserIds();
+                //     console.log('User IDs retrieved:', { userId, telegramId });
                     
-                    setAuthState({
-                        isAuthenticated: true,
-                        userId,
-                        telegramId,
-                    });
-                } else {
+                //     setAuthState({
+                //         isAuthenticated: true,
+                //         userId,
+                //         telegramId,
+                //     });
+                // } else {
                     console.log('No stored auth data found');
                     // Only check Telegram WebApp on client side
                     console.log('Checking Telegram WebApp availability:', {
@@ -78,7 +78,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                         userId: response.user_id,
                         telegramId: response.telegram_id,
                     });
-                }
+               // }
             } catch (error) {
                 console.error('Authentication error:', error);
                 const errorMessage = error instanceof Error ? error.message : 'Authentication failed';
