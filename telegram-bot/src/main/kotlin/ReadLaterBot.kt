@@ -14,14 +14,15 @@ import org.telegram.telegrambots.meta.api.objects.message.Message
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardRow
+import java.net.URL
 
 class ReadLaterBot : LongPollingSingleThreadUpdateConsumer {
 
     private val botEnvironment = System.getenv("TELEGRAM_BOT_ENVIRONMENT")
     private val telegramUrl = if (botEnvironment == "prod") {
-       TelegramUrl("https", "api.telegram.org", 443, false)
+        TelegramUrl("https", "api.telegram.org", 443, false)
     } else {
-       TelegramUrl("https", "api.telegram.org", 443, true)
+        TelegramUrl("https", "api.telegram.org", 443, true)
     }
     private val telegramClient = OkHttpTelegramClient(System.getenv("TELEGRAM_BOT_TOKEN").orEmpty(), telegramUrl)
     private val dbHelper = DatabaseHelper()
@@ -75,7 +76,7 @@ class ReadLaterBot : LongPollingSingleThreadUpdateConsumer {
         val message = update.message
         val fromId = message.from.id
 
-        if (isLink(message.text)) {
+        if (isValidUrl(message.text)) {
             sendToParser(message.text, fromId.toString())
         } else {
             sendText(fromId, "Not a link", telegramClient)
@@ -148,9 +149,13 @@ class ReadLaterBot : LongPollingSingleThreadUpdateConsumer {
         return idParam?.substringAfter("id=")
     }
 
-    private fun isLink(url: String): Boolean {
-        val regex = Regex("^(https?://)?(www\\.)?[a-zA-Z0-9\\-]+\\.[a-zA-Z]{2,}(/\\S*)?$")
-        return regex.matches(url)
+    private fun isValidUrl(url: String): Boolean {
+        return try {
+            URL(url).toURI() // Converts to URI to check validity
+            true
+        } catch (e: Exception) {
+            false
+        }
     }
 
     private fun sendToParser(url: String, id: String) {
