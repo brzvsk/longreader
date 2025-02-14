@@ -14,6 +14,7 @@ interface ArticleCardProps {
   onArchive?: () => void
   onUnarchive?: () => void
   onProgressUpdate?: (progress: number) => void
+  onDelete?: () => void
 }
 
 function getDomainFromUrl(url: string): string {
@@ -25,7 +26,7 @@ function getDomainFromUrl(url: string): string {
   }
 }
 
-export function ArticleCard({ article, onArchive, onUnarchive, onProgressUpdate }: ArticleCardProps) {
+export function ArticleCard({ article, onArchive, onUnarchive, onProgressUpdate, onDelete }: ArticleCardProps) {
   const sourceName = getDomainFromUrl(article.metadata.source_url)
   const [progress, setProgress] = useState(article.progress.percentage)
   const isCompleted = progress === 100
@@ -75,6 +76,7 @@ export function ArticleCard({ article, onArchive, onUnarchive, onProgressUpdate 
             onProgressUpdate={handleProgressUpdate}
             onArchive={onArchive}
             onUnarchive={onUnarchive}
+            onDelete={onDelete}
             progress={progress}
             isArchived={isArchived}
           />

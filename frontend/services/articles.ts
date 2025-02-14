@@ -35,8 +35,7 @@ export async function unarchiveArticle(articleId: string): Promise<void> {
   await api.put(`/users/${userId}/articles/${articleId}/unarchive`)
 }
 
-// export async function deleteArticle(userId: string, articleId: string): Promise<void> {
-//   return apiRequest<void>(`/users/${userId}/articles/${articleId}`, {
-//     method: 'DELETE',
-//   })
-// }
+export async function deleteArticle(articleId: string): Promise<void> {
+  const userId = getUserId()
+  await api.delete(`/users/${userId}/articles/${articleId}`)
+}

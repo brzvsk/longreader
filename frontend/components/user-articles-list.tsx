@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { ArticleCard } from "@/components/article-card"
 import { ArticleCardSkeleton } from "@/components/article-card-skeleton"
-import { getUserArticles, archiveArticle, unarchiveArticle, updateArticleProgress } from "@/services/articles"
+import { getUserArticles, archiveArticle, unarchiveArticle, updateArticleProgress, deleteArticle } from "@/services/articles"
 import { Article } from '@/types/article'
 import { cn } from '@/lib/utils'
 
@@ -87,6 +87,15 @@ export function UserArticlesList() {
     }
   }
 
+  const handleDelete = async (articleId: string) => {
+    try {
+      await deleteArticle(articleId)
+      await refreshArticles()
+    } catch (error) {
+      console.error('Failed to delete article:', error)
+    }
+  }
+
   const inProgressArticles = articles
     .filter(article => article.progress.percentage > 0 
       // && article.progress.percentage < 100 
@@ -148,6 +157,7 @@ export function UserArticlesList() {
                 onArchive={() => handleArchive(article._id)}
                 onUnarchive={() => handleUnarchive(article._id)}
                 onProgressUpdate={(progress) => handleProgressUpdate(article._id, progress)}
+                onDelete={() => handleDelete(article._id)}
               />
             ))}
           </div>
@@ -190,6 +200,7 @@ export function UserArticlesList() {
                 onArchive={() => handleArchive(article._id)}
                 onUnarchive={() => handleUnarchive(article._id)}
                 onProgressUpdate={(progress) => handleProgressUpdate(article._id, progress)}
+                onDelete={() => handleDelete(article._id)}
               />
             ))
           ) : activeView === 'all' ? (
