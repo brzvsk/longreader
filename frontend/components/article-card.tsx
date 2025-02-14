@@ -82,44 +82,47 @@ export function ArticleCard({ article, onArchive, onUnarchive, onProgressUpdate 
       </div>
 
       {/* Main Content */}
-      <div className="flex flex-col gap-4">
-        <div className="flex gap-6">
-          <div className="flex-1">
-            <Link href={`/article/${article._id}`} className="block">
-              <h2 className="text-xl font-bold line-clamp-2 mb-2 font-sans hover:text-accent transition-colors" style={{ color: 'var(--tg-text-color)' }}>
+      <Link 
+        href={`/article/${article._id}`} 
+        className="block"
+      >
+        <div className="flex flex-col gap-4">
+          <div className="flex gap-6">
+            <div className="flex-1">
+              <h2 className="text-xl font-bold line-clamp-2 mb-2 font-sans" style={{ color: 'var(--tg-text-color)' }}>
                 {article.title}
               </h2>
-            </Link>
-            <p className="text-base line-clamp-3" style={{ color: 'var(--tg-text-color)' }}>
-              {article.short_description}
-            </p>
-          </div>
-        </div>
-        
-        {/* Footer Section */}
-        <div className="flex items-center justify-between text-sm">
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1 text-xs" style={{ color: 'var(--tg-hint-color)' }}>
-              {article.metadata.reading_time} min read
+              <p className="text-base line-clamp-3" style={{ color: 'var(--tg-text-color)' }}>
+                {article.short_description}
+              </p>
             </div>
-            {progress > 0 && (
-              <>
-                <span className="text-xs" style={{ color: 'var(--tg-hint-color)' }}>•</span>
-                {isCompleted ? (
-                  <span className="text-xs flex items-center gap-1.5 text-green-600 font-medium">
-                    completed
-                    <div className="flex-shrink-0 rounded-full bg-green-600/10 p-0.5">
-                      <CheckIcon className="w-3 h-3 text-green-600" />
-                    </div>
-                  </span>
-                ) : (
-                  <span className="text-xs" style={{ color: 'var(--tg-hint-color)' }}>{progress}% complete</span>
-                )}
-              </>
-            )}
+          </div>
+          
+          {/* Footer Section */}
+          <div className="flex items-center justify-between text-sm">
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1 text-xs" style={{ color: 'var(--tg-hint-color)' }}>
+                {article.metadata.reading_time} min read
+              </div>
+              {progress > 0 && (
+                <>
+                  <span className="text-xs" style={{ color: 'var(--tg-hint-color)' }}>•</span>
+                  {isCompleted ? (
+                    <span className="text-xs flex items-center gap-1.5 text-green-600 font-medium">
+                      completed
+                      <div className="flex-shrink-0 rounded-full bg-green-600/10 p-0.5">
+                        <CheckIcon className="w-3 h-3 text-green-600" />
+                      </div>
+                    </span>
+                  ) : (
+                    <span className="text-xs" style={{ color: 'var(--tg-hint-color)' }}>{progress}% complete</span>
+                  )}
+                </>
+              )}
+            </div>
           </div>
         </div>
-      </div>
+      </Link>
     </div>
   )
 } 
