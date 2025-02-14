@@ -1,0 +1,26 @@
+name: Build Backend Image
+
+on:
+    workflow_dispatch:
+
+permissions:
+    contents: read
+    packages: write  # ✅ Required to push images to GHCR
+
+jobs:
+    build-backend:
+        name: Build Backend Image
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout Code
+              uses: actions/checkout@v4
+
+            - name: Log in to GitHub Container Registry
+              run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+            - name: Build and Push Backend Image
+              run: |
+                  REPO_OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+                  IMAGE_NAME="ghcr.io/$REPO_OWNER/backend:latest"
+                  docker build -t $IMAGE_NAME ./backend
+                  docker push $IMAGE_NAME
