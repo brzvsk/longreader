@@ -3,7 +3,6 @@ package goldenluk.readlaterbpt
 import org.telegram.telegrambots.client.okhttp.OkHttpTelegramClient
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.DeleteMessage
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboard
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardButton
@@ -50,7 +49,7 @@ fun deleteMessage(id: Long, telegramClient: OkHttpTelegramClient, messageId: Int
 }
 
 fun sendStartMessage(chatId: Long, telegramClient: OkHttpTelegramClient) {
-    val webAppUrl = "https://your-mini-app-url.com" // Replace with your Mini App URL
+    val webAppUrl = "https://longreader.brzv.sk"
 
     val keyboard = ReplyKeyboardMarkup.builder()
         .resizeKeyboard(true)
