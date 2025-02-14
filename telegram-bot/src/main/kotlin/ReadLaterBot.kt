@@ -217,7 +217,7 @@ class ReadLaterBot : LongPollingSingleThreadUpdateConsumer {
     private fun handleCommand(message: Message) {
         val fromId = message.from.id
         when (message.text) {
-            "/start" -> sendStartMessage(fromId, telegramClient)
+            "/start" -> sendText(fromId, "Send me a link, and I'll parse it and add to the Mini App!", telegramClient)
             "/help" -> sendText(fromId, "Help TBD", telegramClient)
             "/all" -> sendAllBookmarks(fromId)
             "/clear_all" -> dbHelper.removeAllBookmarks(fromId.toString())
