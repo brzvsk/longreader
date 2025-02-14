@@ -49,7 +49,11 @@ fun deleteMessage(id: Long, telegramClient: OkHttpTelegramClient, messageId: Int
 }
 
 fun sendStartMessage(chatId: Long, telegramClient: OkHttpTelegramClient) {
-    val webAppUrl = "https://longreader.brzv.sk"
+    val webAppUrl = if (System.getenv("TELEGRAM_MINI_APP_LINK").isNullOrBlank()) {
+        "https://longreader.brzv.sk"
+    } else {
+        System.getenv("TELEGRAM_MINI_APP_LINK")
+    }
 
     val keyboard = ReplyKeyboardMarkup.builder()
         .resizeKeyboard(true)
