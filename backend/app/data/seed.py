@@ -11,9 +11,29 @@ load_dotenv()
 
 MONGODB_URL = os.getenv("MONGODB_URL", "mongodb://localhost:27017")
 DATABASE_NAME = os.getenv("DATABASE_NAME", "longreader")
+ENVIRONMENT = os.getenv("TELEGRAM_BOT_ENVIRONMENT", "prod")
+
+def print_environment_error():
+    print("""
+ERROR: Cannot run seed script in production environment!
+
+To run this script, you need to set the environment to 'test':
+
+1. Add to your .env file:
+   TELEGRAM_BOT_ENVIRONMENT=test
+
+2. Or run directly with the environment variable:
+   TELEGRAM_BOT_ENVIRONMENT=test python seed.py
+
+This is a safety measure to prevent accidental data seeding in production.
+""")
+    sys.exit(1)
 
 async def clear_database():
     """Clear all collections in the database without seeding new data."""
+    if ENVIRONMENT == "prod":
+        print_environment_error()
+        
     client = AsyncIOMotorClient(MONGODB_URL)
     db = client[DATABASE_NAME]
     
@@ -24,17 +44,28 @@ async def clear_database():
     print("Database cleared successfully")
 
 async def seed_database():
+    if ENVIRONMENT == "prod":
+        print_environment_error()
+        
     client = AsyncIOMotorClient(MONGODB_URL)
     db = client[DATABASE_NAME]
     
-    # Clear existing data
+    # Clear only articles and user-article links
     await db.articles.delete_many({})
-    await db.users.delete_many({})
     await db.user_articles.delete_many({})
+    
+    # Get first user from the database
+    user = await db.users.find_one()
+    if not user:
+        print("No users found in the database. Please create a user first via opening webapp in local telegram.")
+        return
+    
+    print(f"Using existing user with ID: {user['_id']}")
     
     # Sample articles from stub_data
     articles = [
         {
+            "_id": ObjectId("67b0cf9a8d22abcaf7c69315"),
             "title": "Understanding React Server Components",
             "content": """
 # Understanding React Server Components
@@ -79,6 +110,7 @@ async function BlogPost({ id }) {
             "created_at": datetime.utcnow()
         },
         {
+            "_id": ObjectId("67b0cf9a8d22abcaf7c69316"),
             "title": "Why is React Server Components so important?",
             "content": """
 # Why React Server Components Matter
@@ -115,6 +147,7 @@ Server Components are already making waves in production applications, showing s
             "created_at": datetime.utcnow()
         },
         {
+            "_id": ObjectId("67b0cf9a8d22abcaf7c69317"),
             "title": "The Future of Artificial Intelligence in 2024",
             "content": """
 # The Future of Artificial Intelligence in 2024
@@ -146,6 +179,7 @@ The integration of AI into daily life raises important questions about privacy, 
             "created_at": datetime.utcnow()
         },
         {
+            "_id": ObjectId("67b0cf9a8d22abcaf7c69318"),
             "title": "Sustainable Architecture: Building for Tomorrow",
             "content": """
 # Sustainable Architecture: Building for Tomorrow
@@ -182,6 +216,7 @@ The future of architecture lies in buildings that not only minimize environmenta
             "created_at": datetime.utcnow()
         },
         {
+            "_id": ObjectId("67b0cf9a8d22abcaf7c69319"),
             "title": "The Science of Deep Sleep",
             "content": """
 # The Science of Deep Sleep
@@ -221,6 +256,7 @@ Evidence-based strategies for achieving better sleep, including:
             "created_at": datetime.utcnow()
         },
         {
+            "_id": ObjectId("67b0cf9a8d22abcaf7c6931a"),
             "title": "Quantum Computing: A Beginner's Guide",
             "content": """
 # Quantum Computing: A Beginner's Guide
@@ -268,22 +304,10 @@ The potential impact of quantum computing on various industries and scientific r
     article_result = await db.articles.insert_many(articles)
     print(f"Inserted {len(article_result.inserted_ids)} articles")
     
-    # Create test user
-    test_user = {
-        "telegram_id": "2200219305",
-        "metadata": {
-            "registered_at": datetime.utcnow(),
-            "referral": "test_referral"
-        }
-    }
-    
-    # Insert test user
-    user_result = await db.users.insert_one(test_user)
-    print(f"Inserted test user with ID: {user_result.inserted_id}")
-    
     # Create user-article links for all articles
     user_articles = []
-    for article, article_id in zip(articles, article_result.inserted_ids):
+    base_id = "67b0d06cc899e5c6be9476"
+    for i, article in enumerate(articles):
         content_length = len(article["content"])
         percentage = random.randint(0, 100)
         last_position = int(content_length * (percentage / 100))
@@ -298,9 +322,13 @@ The potential impact of quantum computing on various industries and scientific r
         random_seconds_updated = random.randint(0, 86400 - random_seconds_saved)
         updated_at = saved_at + timedelta(days=random_days_updated, seconds=random_seconds_updated)
         
+        # Generate hex string for the last two characters of ObjectId
+        hex_suffix = format(i + 7, '02x')  # Convert to 2-digit hex
+        
         user_articles.append({
-            "user_id": str(user_result.inserted_id),
-            "article_id": article_id,
+            "_id": ObjectId(f"{base_id}{hex_suffix}"),
+            "user_id": user["_id"],
+            "article_id": article["_id"],
             "progress": {
                 "percentage": percentage,
                 "last_position": last_position,
@@ -315,7 +343,7 @@ The potential impact of quantum computing on various industries and scientific r
     
     # Insert user-article links
     user_articles_result = await db.user_articles.insert_many(user_articles)
-    print(f"Inserted {len(user_articles_result.inserted_ids)} user-article links")
+    print(f"Inserted {len(user_articles_result.inserted_ids)} user-article links for user {user['_id']}")
 
 if __name__ == "__main__":
     if len(sys.argv) > 1 and sys.argv[1] == "--clear":
