@@ -24,7 +24,11 @@ export function TelegramProvider({ children }: { children: React.ReactNode }) {
     // Set color scheme class
     root.classList.add(webApp.colorScheme === 'dark' ? 'dark' : 'light')
 
+    // First tell Telegram the app is ready to be displayed
     webApp.ready()
+
+    // Then expand the webapp to full height
+    webApp.expand()
   }, [])
 
   return <>{children}</>
