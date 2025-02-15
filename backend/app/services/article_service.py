@@ -212,7 +212,7 @@ async def create_share_message(article_id: str, telegram_user_id: int) -> str:
         deep_link = f"https://t.me/{bot_username}/{app_name}?startapp=article_{article_id}"
         
         # Simplify the message format to avoid markdown issues
-        message_text = f"*{header}*\n\n{subheader}\n\n[Read full]({deep_link})"
+        message_text = f"*{header}*\n\n{subheader}\n\n[Read full 📖]({deep_link})"
         logger.debug(f"Prepared message text: {message_text}")
         
         bot_token = os.getenv('TELEGRAM_BOT_TOKEN')

@@ -5,7 +5,7 @@ import { Button } from "./ui/button"
 import { cn } from "@/lib/utils"
 import { useEffect, useState, useCallback, useRef } from 'react'
 import confetti from 'canvas-confetti'
-import { updateArticleProgress, archiveArticle } from '@/services/articles'
+import { updateArticleProgress, archiveArticle, shareArticle } from '@/services/articles'
 import { useParams } from 'next/navigation'
 
 interface PostReadingActionsProps {
@@ -140,6 +140,14 @@ export function PostReadingActions({
     }
   }
 
+  const handleShare = async () => {
+    try {
+      await shareArticle(articleId)
+    } catch (error) {
+      console.error('Failed to share article:', error)
+    }
+  }
+
   return (
     <>
       {/* Progress bar */}
@@ -166,6 +174,7 @@ export function PostReadingActions({
                 backgroundColor: 'var(--tg-button-color)',
                 color: 'var(--tg-button-text-color)'
               }}
+              onClick={handleShare}
             >
               <Share className="w-4 h-4" />
               Share
