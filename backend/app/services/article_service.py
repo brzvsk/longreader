@@ -205,8 +205,14 @@ async def create_share_message(article_id: str, telegram_user_id: int) -> str:
         header = article.title.replace('[', '\[').replace(']', '\]').replace('*', '\*').replace('_', '\_').replace('-', '\-').replace('#', '\#')
         subheader = article.short_description.replace('[', '\[').replace(']', '\]').replace('*', '\*').replace('_', '\_').replace('-', '\-').replace('#', '\#').replace('.', '\.') if article.short_description else ""
         
+        # Create a deep link with startapp parameter
+        bot_env = os.getenv('TELEGRAM_BOT_ENVIRONMENT', 'test')
+        bot_username = os.getenv('TELEGRAM_BOT_USERNAME', 'longreader_bot')
+        app_name = os.getenv('TELEGRAM_APP_NAME', 'reader')
+        deep_link = f"https://t.me/{bot_username}/{app_name}?startapp=article_{article_id}"
+        
         # Simplify the message format to avoid markdown issues
-        message_text = f"*{header}*\n\n{subheader}\n\n[Read full](https://t.me/longreader_bot/reader/{article_id})"
+        message_text = f"*{header}*\n\n{subheader}\n\n[Read full]({deep_link})"
         logger.debug(f"Prepared message text: {message_text}")
         
         bot_token = os.getenv('TELEGRAM_BOT_TOKEN')
@@ -220,7 +226,6 @@ async def create_share_message(article_id: str, telegram_user_id: int) -> str:
         
         async with aiohttp.ClientSession() as session:
             logger.debug("Created aiohttp session")
-            bot_env = os.getenv('TELEGRAM_BOT_ENVIRONMENT', 'test')
             api_path = "test/" if bot_env == "test" else ""
             api_url = f"https://api.telegram.org/bot{bot_token}/{api_path}savePreparedInlineMessage"
             logger.debug(f"Prepared API URL (without token): https://api.telegram.org/bot.../{api_path}savePreparedInlineMessage")
