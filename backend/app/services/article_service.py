@@ -4,6 +4,9 @@ from bson import ObjectId
 from ..models.article import Article, FlattenedTimestamps, UserArticle, UserArticleFlat, UserArticleFlatCollection
 from ..database import articles, user_articles
 from datetime import datetime
+import aiohttp
+import os
+import logging
 
 
 async def get_user_articles_flat(user_id: str) -> UserArticleFlatCollection:
@@ -181,3 +184,79 @@ async def delete_user_article(user_id: str, article_id: str) -> UserArticle:
         return UserArticle(**result)
     except Exception as e:
         raise HTTPException(status_code=500, detail="Failed to delete article")
+
+async def get_article(article_id: str) -> Article:
+    """Get article by ID without user context"""
+    article = await articles.find_one({"_id": ObjectId(article_id)})
+    if not article:
+        raise HTTPException(status_code=404, detail="Article not found")
+    return Article(**article)
+
+async def create_share_message(article_id: str, telegram_user_id: int) -> str:
+    """Create a prepared inline message for sharing an article via Telegram"""
+    logger = logging.getLogger(__name__)
+    logger.info(f"Creating share message for article: {article_id} for Telegram user: {telegram_user_id}")
+    
+    try:
+        article = await get_article(article_id)
+        logger.debug(f"Found article with title: {article.title}")
+        
+        # Escape special characters for MarkdownV2
+        header = article.title.replace('[', '\[').replace(']', '\]').replace('*', '\*').replace('_', '\_').replace('-', '\-').replace('#', '\#')
+        subheader = article.short_description.replace('[', '\[').replace(']', '\]').replace('*', '\*').replace('_', '\_').replace('-', '\-').replace('#', '\#').replace('.', '\.') if article.short_description else ""
+        
+        # Simplify the message format to avoid markdown issues
+        message_text = f"*{header}*\n\n{subheader}\n\n[Read full](https://t.me/longreader_bot/reader/{article_id})"
+        logger.debug(f"Prepared message text: {message_text}")
+        
+        bot_token = os.getenv('TELEGRAM_BOT_TOKEN')
+        logger.debug(f"Got bot token from env: {'Yes' if bot_token else 'No'}")
+        
+        if not bot_token:
+            logger.error("TELEGRAM_BOT_TOKEN environment variable is not set")
+            raise HTTPException(status_code=500, detail="Bot token not configured")
+        
+        logger.debug(f"Using bot token starting with: {bot_token[:6]}...")  # Log only first 6 chars for security
+        
+        async with aiohttp.ClientSession() as session:
+            logger.debug("Created aiohttp session")
+            bot_env = os.getenv('TELEGRAM_BOT_ENVIRONMENT', 'test')
+            api_path = "test/" if bot_env == "test" else ""
+            api_url = f"https://api.telegram.org/bot{bot_token}/{api_path}savePreparedInlineMessage"
+            logger.debug(f"Prepared API URL (without token): https://api.telegram.org/bot.../{api_path}savePreparedInlineMessage")
+            
+            request_data = {
+                "user_id": telegram_user_id,
+                "allow_user_chats": True,
+                "result": {
+                    "type": "article",
+                    "id": "1",  # Placeholder, not used for prepared messages
+                    "title": article.title,
+                    "description": article.short_description or "",
+                    "input_message_content": {
+                        "message_text": message_text,
+                        "parse_mode": "MarkdownV2"
+                    }
+                }
+            }
+            logger.debug(f"Prepared request data: {request_data}")
+            
+            async with session.post(api_url, json=request_data) as response:
+                logger.debug(f"Got response with status: {response.status}")
+                response_text = await response.text()
+                logger.debug(f"Response text: {response_text}")
+                
+                if response.status != 200:
+                    logger.error(f"Failed to create share message. Status: {response.status}, Response: {response_text}")
+                    raise HTTPException(status_code=500, detail="Failed to create share message")
+                
+                data = await response.json()
+                message_id = data["result"]["id"]
+                logger.info(f"Successfully created share message with ID: {message_id}")
+                return message_id
+                
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception("Unexpected error while creating share message")
+        raise HTTPException(status_code=500, detail=f"Failed to create share message: {str(e)}")

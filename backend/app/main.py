@@ -6,6 +6,10 @@ from logging.handlers import RotatingFileHandler
 import os
 from datetime import datetime
 from bson import ObjectId
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 from .models.article import UserArticle, UserArticleFlat, UserArticleFlatCollection
 from .models.auth import AuthResponse, TelegramAuthRequest
@@ -15,7 +19,8 @@ from .services.article_service import (
     update_article_progress,
     archive_user_article,
     delete_user_article,
-    unarchive_user_article
+    unarchive_user_article,
+    create_share_message
 )
 from .services.auth_service import authenticate_telegram_user
 from .database import create_indexes
@@ -25,12 +30,12 @@ from pydantic import BaseModel
 
 # Configure logging
 logger = logging.getLogger()
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)  # Set root logger to DEBUG
 
-# Console handler with INFO level
+# Console handler with DEBUG level
 console_handler = logging.StreamHandler(sys.stdout)
-console_handler.setLevel(logging.INFO)
-console_format = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+console_handler.setLevel(logging.DEBUG)
+console_format = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - [%(filename)s:%(lineno)d] - %(message)s')
 console_handler.setFormatter(console_format)
 
 # File handler with DEBUG level
@@ -47,6 +52,9 @@ file_format = logging.Formatter(
     '%(asctime)s - %(name)s - %(levelname)s - [%(filename)s:%(lineno)d] - %(message)s'
 )
 file_handler.setFormatter(file_format)
+
+# Remove any existing handlers
+logger.handlers = []
 
 # Add handlers to the logger
 logger.addHandler(console_handler)
@@ -175,3 +183,12 @@ async def parse_article(user_id: str, request: ParseArticleRequest, background_t
             status_code=500,
             detail=f"Failed to parse article: {str(e)}"
         )
+
+@app.post("/users/{user_id}/articles/{article_id}/share")
+async def create_article_share(user_id: str, article_id: str):
+    """Create a prepared inline message for sharing an article via Telegram"""
+    user = await get_user_by_id(user_id)
+    if not user or not user.telegram_id:
+        raise HTTPException(status_code=404, detail="User not found or Telegram ID not available")
+    message_id = await create_share_message(article_id, user.telegram_id)
+    return {"message_id": message_id}
