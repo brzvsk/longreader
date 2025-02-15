@@ -66,3 +66,13 @@ export async function deleteArticle(articleId: string): Promise<void> {
   const userId = getUserId()
   await api.delete(`/users/${userId}/articles/${articleId}`)
 }
+
+export async function saveArticle(articleId: string): Promise<void> {
+  const userId = getUserId()
+  await api.post(`/users/${userId}/articles/${articleId}/save`)
+}
+
+export async function checkArticleStatus(articleId: string): Promise<{ status: 'new' | 'saved' | 'deleted' }> {
+  const userId = getUserId()
+  return (await api.get<{ status: 'new' | 'saved' | 'deleted' }>(`/users/${userId}/articles/${articleId}/status`)).data
+}

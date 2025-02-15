@@ -1,20 +1,20 @@
 export interface ArticleMetadata {
   source_url: string;
-  author?: string;
-  publish_date?: string;
-  reading_time: number;
+  author?: string | null;
+  publish_date?: string | null;
+  reading_time?: number | null;
 }
 
 export interface ArticleProgress {
   percentage: number;
   last_position: number;
-  updated_at?: string;
+  updated_at: string | null;
 }
 
 export interface ArticleTimestamps {
-  saved_at: string;
-  archived_at?: string;
-  deleted_at?: string;
+  saved_at: string | null;
+  archived_at: string | null;
+  deleted_at: string | null;
   created_at: string;
 }
 
@@ -25,8 +25,9 @@ export interface Article {
   metadata: ArticleMetadata;
   progress: ArticleProgress;
   timestamps: ArticleTimestamps;
+  status: Array<'new' | 'saved' | 'deleted'>;
 }
 
 export interface ArticleContent extends Article {
-  content: string | null;
+  content: string;
 } 

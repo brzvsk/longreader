@@ -4,6 +4,7 @@ import "./globals.css"
 import { AuthProvider } from '@/components/providers/auth-provider';
 import { RequireAuth } from '@/components/auth/require-auth';
 import { TelegramProvider } from '@/components/providers/telegram-provider';
+import { DeepLinkHandler } from '@/components/providers/deep-link-handler';
 
 const inter = Inter({ subsets: ['latin', 'cyrillic'] })
 
@@ -29,7 +30,9 @@ export default function RootLayout({
         <AuthProvider>
           <RequireAuth>
             <TelegramProvider>
-              {children}
+              <DeepLinkHandler>
+                {children}
+              </DeepLinkHandler>
             </TelegramProvider>
           </RequireAuth>
         </AuthProvider>

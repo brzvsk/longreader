@@ -20,7 +20,9 @@ from .services.article_service import (
     archive_user_article,
     delete_user_article,
     unarchive_user_article,
-    create_share_message
+    create_share_message,
+    save_article_for_user,
+    check_user_article_status
 )
 from .services.auth_service import authenticate_telegram_user
 from .database import create_indexes
@@ -103,6 +105,11 @@ async def get_articles_for_user(user_id: str):
 async def get_user_article(user_id: str, article_id: str):
     """Get a specific article saved by the user in a flattened structure (includes content)"""
     return await get_user_article_flat(user_id, article_id)
+
+@app.post("/users/{user_id}/articles/{article_id}/save", response_model=UserArticle)
+async def save_article(user_id: str, article_id: str):
+    """Save or restore an article for a user"""
+    return await save_article_for_user(user_id, article_id)
 
 @app.put("/users/{user_id}/articles/{article_id}/progress", response_model=UserArticle)
 async def update_progress(user_id: str, article_id: str, progress_percentage: float):

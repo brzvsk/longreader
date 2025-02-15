@@ -8,6 +8,9 @@ import { serialize } from 'next-mdx-remote/serialize'
 import { ArticleContent } from "@/components/article-content"
 import { ArticleContent as ArticleType } from "@/types/article"
 import { MDXRemoteSerializeResult } from 'next-mdx-remote'
+import { PostReadingActions } from '@/components/post-reading-actions'
+import { ArticleSaveButton } from '@/components/article-save-button'
+import { useDeepLink } from '@/components/providers/deep-link-provider'
 
 interface ClientArticleProps {
   articleId: string
@@ -30,6 +33,7 @@ export function ClientArticle({ articleId }: ClientArticleProps) {
   const [mdxSource, setMdxSource] = useState<MDXRemoteSerializeResult | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
+  const { isDeepLink } = useDeepLink()
 
   useEffect(() => {
     const fetchArticle = async () => {
@@ -52,6 +56,11 @@ export function ClientArticle({ articleId }: ClientArticleProps) {
     fetchArticle()
   }, [articleId])
 
+  const handleArticleSaved = () => {
+    // Reload the article to get the updated state
+    window.location.reload()
+  }
+
   if (loading) {
     return null // Parent component handles loading state
   }
@@ -61,8 +70,18 @@ export function ClientArticle({ articleId }: ClientArticleProps) {
   }
 
   return (
-    <ArticleContent article={article}>
-      <MDXRemote {...mdxSource} components={{ a: CustomLink }} />
-    </ArticleContent>
+    <div className="relative">
+      {/* Always show save button, it will handle its own visibility */}
+      <div className="sticky top-0 z-50 p-4 bg-[var(--tg-bg-color)] border-b border-[var(--tg-hint-color)]/20">
+        <ArticleSaveButton article={article} onSaved={handleArticleSaved} />
+      </div>
+      <ArticleContent article={article}>
+        <MDXRemote {...mdxSource} components={{ a: CustomLink }} />
+      </ArticleContent>
+      <PostReadingActions
+        isVisible={!!article.timestamps.saved_at}
+        initialProgress={article.progress.percentage}
+      />
+    </div>
   )
 } 

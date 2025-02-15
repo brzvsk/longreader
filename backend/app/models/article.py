@@ -1,6 +1,6 @@
 from datetime import datetime
-from pydantic import BaseModel, BeforeValidator, ConfigDict, Field
-from typing import Annotated, List, Optional, Dict, Any
+from pydantic import BaseModel, BeforeValidator, ConfigDict, Field, computed_field
+from typing import Annotated, List, Optional, Dict, Any, Literal
 from enum import Enum
 from bson import ObjectId
 
@@ -37,7 +37,7 @@ class UserArticleProgress(BaseModel):
     updated_at: Optional[datetime] = None
 
 class UserArticleTimestamps(BaseModel):
-    saved_at: datetime = Field(default_factory=datetime.utcnow)
+    saved_at: Optional[datetime] = None
     archived_at: Optional[datetime] = None
     deleted_at: Optional[datetime] = None
 
@@ -54,7 +54,7 @@ class UserArticle(BaseModel):
 
 # Models for flattened user article response
 class FlattenedTimestamps(BaseModel):
-    saved_at: datetime
+    saved_at: Optional[datetime] = None
     archived_at: Optional[datetime] = None
     deleted_at: Optional[datetime] = None
     created_at: datetime  # article creation time
@@ -67,6 +67,17 @@ class UserArticleFlat(BaseModel):
     metadata: ArticleMetadata
     progress: UserArticleProgress
     timestamps: FlattenedTimestamps
+    
+    @computed_field
+    def status(self) -> List[Literal["new", "saved", "deleted"]]:
+        status = []
+        if self.timestamps.saved_at:
+            status.append("saved")
+        if self.timestamps.deleted_at:
+            status.append("deleted")
+        if not status:
+            status.append("new")
+        return status
 
 class UserArticleFlatCollection(BaseModel):
     articles: List[UserArticleFlat]
