@@ -120,3 +120,49 @@ Longreader is a Telegram mini app designed to help users save and read long arti
    ```bash
    mvn exec:java
    ```
+
+## Deployment and Updates
+
+### Deploying Changes
+
+The project uses GitHub Actions for CI/CD. Here's how to deploy updates:
+
+1. Push changes to the `main` branch
+2. Manually trigger the GitHub Actions workflow for the service you updated (frontend/backend/telegram-bot)
+3. Wait for the new Docker image to be built successfully
+4. SSH into the server:
+   ```bash
+   ssh -i ~/digitalocean root@104.248.33.158
+   ```
+5. Navigate to the project directory:
+   ```bash
+   cd /root/longreader
+   ```
+6. Pull and restart the specific service:
+   ```bash
+   # For frontend updates:
+   docker compose pull frontend
+   docker compose up -d frontend
+
+   # For backend updates:
+   docker compose pull backend
+   docker compose up -d backend
+
+   # For telegram bot updates:
+   docker compose pull telegram-bot
+   docker compose up -d telegram-bot
+   ```
+
+### Important Notes
+- Always check the service logs after deployment:
+  ```bash
+  docker compose logs -f [service_name]  # e.g., frontend, backend, telegram-bot
+  ```
+- The production environment is in `/root/longreader` (not `/opt/longreader`)
+- If multiple services need updating, you can update all at once:
+  ```bash
+  docker compose pull
+  docker compose up -d
+  ```
+- GitHub Actions workflows must be triggered manually - they don't run automatically on push
+- Monitor the GitHub Actions workflow to ensure the build succeeds before deploying
