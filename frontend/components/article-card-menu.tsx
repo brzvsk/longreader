@@ -111,7 +111,20 @@ export function ArticleCardMenu({
     {
       icon: Trash2,
       label: "Remove",
-      onClick: () => onDelete?.(),
+      onClick: () => {
+        if (window.Telegram?.WebApp) {
+          window.Telegram.WebApp.showConfirm(
+            "Are you sure you want to remove this article?",
+            (isConfirmed) => {
+              if (isConfirmed) {
+                onDelete?.()
+              }
+            }
+          )
+        } else {
+          onDelete?.()
+        }
+      },
       style: { color: 'var(--tg-destructive)' }
     },
   ]

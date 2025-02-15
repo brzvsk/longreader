@@ -46,6 +46,8 @@ interface WebApp {
     ready(): void;
     expand(): void;
     close(): void;
+    showConfirm(message: string, callback?: (isConfirmed: boolean) => void): void;
+    showAlert(message: string): Promise<void>;
 }
 
 interface Window {
