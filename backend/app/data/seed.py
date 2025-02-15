@@ -68,8 +68,6 @@ async def seed_database():
             "_id": ObjectId("67b0cf9a8d22abcaf7c69315"),
             "title": "Understanding React Server Components",
             "content": """
-# Understanding React Server Components
-
 React Server Components represent a paradigm shift in how we build React applications. They provide a new way to think about component rendering and data fetching.
 
 ## What are Server Components?
@@ -80,16 +78,18 @@ Server Components are components that execute and render on the server. Unlike t
 - Reduced client-side JavaScript
 - Improved initial page load
 
+For an in-depth technical overview, check out [React Server Components RFC](https://github.com/reactjs/rfcs/blob/main/text/0188-server-components.md).
+
 ## Key Benefits
 
 ### 1. Performance
-Server Components can access data sources directly without additional network requests. This means faster page loads and reduced client-side processing.
+Server Components can access data sources directly without additional network requests. This means faster page loads and reduced client-side processing. Learn more about performance benefits in the [official React documentation](https://react.dev/blog/2023/03/22/react-labs-what-we-have-been-working-on-march-2023#react-server-components).
 
 ### 2. Security
 Sensitive operations can be performed entirely on the server, keeping API keys and other credentials secure.
 
 ### 3. Bundle Size
-By executing on the server, these components don't contribute to the JavaScript bundle sent to clients.
+By executing on the server, these components don't contribute to the JavaScript bundle sent to clients. See real-world examples in [Next.js App Router documentation](https://nextjs.org/docs/app/building-your-application/rendering/server-components).
 
 ## Code Example
 
@@ -99,6 +99,8 @@ async function BlogPost({ id }) {
   return <article>{post.content}</article>;
 }
 ```
+
+For more examples and best practices, visit the [React Server Components Patterns](https://vercel.com/blog/understanding-react-server-components).
             """,
             "short_description": "Learn about React Server Components and how they change the way we build React applications.",
             "metadata": {
@@ -113,8 +115,6 @@ async function BlogPost({ id }) {
             "_id": ObjectId("67b0cf9a8d22abcaf7c69316"),
             "title": "Why is React Server Components so important?",
             "content": """
-# Why React Server Components Matter
-
 React Server Components are revolutionizing how we build modern web applications. This article explores their significance and impact on web development.
 
 ## The Problem They Solve
@@ -150,24 +150,22 @@ Server Components are already making waves in production applications, showing s
             "_id": ObjectId("67b0cf9a8d22abcaf7c69317"),
             "title": "The Future of Artificial Intelligence in 2024",
             "content": """
-# The Future of Artificial Intelligence in 2024
-
 As we delve deeper into 2024, artificial intelligence continues to reshape our world in unprecedented ways. From autonomous systems to creative AI, the landscape is evolving rapidly.
 
 ## Key Trends
 
 ### 1. Multimodal AI
-Systems that can process and generate multiple types of data - text, images, audio, and video - are becoming increasingly sophisticated.
+Systems that can process and generate multiple types of data - text, images, audio, and video - are becoming increasingly sophisticated. Learn more about multimodal AI in [OpenAI's GPT-4V technical report](https://openai.com/research/gpt-4v-system-card).
 
 ### 2. AI Governance
-The rise of AI regulation and ethical frameworks is shaping how we develop and deploy AI systems.
+The rise of AI regulation and ethical frameworks is shaping how we develop and deploy AI systems. Read about the [EU AI Act](https://www.europarl.europa.eu/news/en/headlines/society/20230601STO93804/eu-ai-act-first-regulation-on-artificial-intelligence) and its implications.
 
 ### 3. AI in Healthcare
-Breakthrough applications in medical diagnosis, drug discovery, and personalized medicine.
+Breakthrough applications in medical diagnosis, drug discovery, and personalized medicine. Explore [DeepMind's AlphaFold protein structure database](https://alphafold.ebi.ac.uk/) revolutionizing biological research.
 
 ## Impact on Society
 
-The integration of AI into daily life raises important questions about privacy, employment, and human-AI collaboration.
+The integration of AI into daily life raises important questions about privacy, employment, and human-AI collaboration. For an in-depth analysis, check out [MIT Technology Review's AI report](https://www.technologyreview.com/artificial-intelligence/).
             """,
             "short_description": "Explore the latest trends and developments in artificial intelligence and their impact on society.",
             "metadata": {
@@ -182,8 +180,6 @@ The integration of AI into daily life raises important questions about privacy, 
             "_id": ObjectId("67b0cf9a8d22abcaf7c69318"),
             "title": "Sustainable Architecture: Building for Tomorrow",
             "content": """
-# Sustainable Architecture: Building for Tomorrow
-
 The intersection of environmental consciousness and architectural innovation is creating a new paradigm in building design.
 
 ## Core Principles
@@ -219,8 +215,6 @@ The future of architecture lies in buildings that not only minimize environmenta
             "_id": ObjectId("67b0cf9a8d22abcaf7c69319"),
             "title": "The Science of Deep Sleep",
             "content": """
-# The Science of Deep Sleep
-
 Understanding the mechanisms of sleep is crucial for maintaining optimal health and cognitive function.
 
 ## Sleep Cycles
@@ -259,8 +253,6 @@ Evidence-based strategies for achieving better sleep, including:
             "_id": ObjectId("67b0cf9a8d22abcaf7c6931a"),
             "title": "Quantum Computing: A Beginner's Guide",
             "content": """
-# Quantum Computing: A Beginner's Guide
-
 Quantum computing represents a fundamental shift in how we process information, leveraging quantum mechanics to solve complex problems.
 
 ## Basic Concepts
@@ -294,6 +286,73 @@ The potential impact of quantum computing on various industries and scientific r
                 "source_url": "https://quantumworld.edu/intro",
                 "author": "Prof. David Quantum",
                 "publish_date": datetime.utcnow() - timedelta(days=7),
+                "reading_time": 20
+            },
+            "created_at": datetime.utcnow()
+        },
+        {
+            "_id": ObjectId("67b0cf9a8d22abcaf7c69320"),
+            "title": "The Complete Guide to Modern TypeScript",
+            "content": """
+TypeScript has evolved significantly since its inception, becoming an essential tool in modern web development. This comprehensive guide covers the latest features and best practices.
+
+## Advanced TypeScript Features
+
+### Type Inference
+TypeScript's type inference capabilities have grown more sophisticated, allowing for better code completion and error detection.
+
+### Template Literal Types
+Learn how to leverage template literal types for more precise string manipulation and type safety.
+
+### The satisfies Operator
+Understanding the new satisfies operator and how it improves type checking without widening types.
+
+## Best Practices
+
+- Writing better generic constraints
+- Using utility types effectively
+- Pattern matching with types
+            """,
+            "short_description": "A comprehensive guide to TypeScript's modern features and best practices for large-scale applications.",
+            "metadata": {
+                "source_url": "https://www.typescriptlang.org/docs/handbook/intro.html",
+                "author": "Microsoft TypeScript Team",
+                "publish_date": datetime.utcnow() - timedelta(days=2),
+                "reading_time": 25
+            },
+            "created_at": datetime.utcnow()
+        },
+        {
+            "_id": ObjectId("67b0cf9a8d22abcaf7c69321"),
+            "title": "The Evolution of JavaScript Frameworks in 2024",
+            "content": """
+As web development continues to evolve, JavaScript frameworks are adapting to new challenges and requirements. This article explores the current state of major frameworks and emerging trends.
+
+## Current Landscape
+
+### React's New Architecture
+- Server Components
+- Use Hook
+- Asset Loading
+
+### Vue's Composition API
+- Script Setup
+- Reactivity Transform
+- Performance Improvements
+
+### Svelte's Innovation
+- Runes
+- Server-side Components
+- Enhanced TypeScript Support
+
+## Future Trends
+Understanding where framework development is headed and how it affects your technology choices.
+            """,
+            "short_description": "An in-depth look at how JavaScript frameworks are evolving and what it means for modern web development.",
+            "metadata": {
+                "source_url": "https://2024.stateofjs.com",
+                "author": "State of JS Team",
+                "publish_date": datetime.utcnow() - timedelta(days=1),
                 "reading_time": 20
             },
             "created_at": datetime.utcnow()
