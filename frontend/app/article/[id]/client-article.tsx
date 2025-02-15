@@ -13,6 +13,18 @@ interface ClientArticleProps {
   articleId: string
 }
 
+// Custom link component that handles external links
+const CustomLink = (props: React.AnchorHTMLAttributes<HTMLAnchorElement>) => {
+  const { href, ...rest } = props
+  const isExternal = href && !href.startsWith('/')
+
+  if (isExternal) {
+    return <a {...rest} href={href} target="_blank" rel="noopener noreferrer" />
+  }
+
+  return <a {...props} />
+}
+
 export function ClientArticle({ articleId }: ClientArticleProps) {
   const [article, setArticle] = useState<ArticleType | null>(null)
   const [mdxSource, setMdxSource] = useState<MDXRemoteSerializeResult | null>(null)
@@ -50,7 +62,7 @@ export function ClientArticle({ articleId }: ClientArticleProps) {
 
   return (
     <ArticleContent article={article}>
-      <MDXRemote {...mdxSource} />
+      <MDXRemote {...mdxSource} components={{ a: CustomLink }} />
     </ArticleContent>
   )
 } 
