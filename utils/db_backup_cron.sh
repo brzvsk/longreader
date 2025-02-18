@@ -1,0 +1,1 @@
+0 2 * * * /root/longreader/db_utils/db_backup.sh >> /root/longreader/logs/backup_log.txt 2>&1
