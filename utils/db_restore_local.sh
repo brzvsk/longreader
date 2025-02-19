@@ -9,14 +9,38 @@ timestamp() {
     date +"%Y-%m-%dT%H:%M:%S"
 }
 
-
-# CHECK IF ARGUMENT IS PROVIDED
-if [[ -z "$1" ]]; then
-    echo "[$(timestamp)] [ERROR] No backup file provided! Usage: ./restore_local.sh <backup_file.tar.gz>"
+# LIST AVAILABLE BACKUP FILES
+echo "[$(timestamp)] [INFO] Available backup files in $BACKUP_DIR:"
+if [[ ! -d "$BACKUP_DIR" ]]; then
+    echo "[$(timestamp)] [ERROR] Backup directory $BACKUP_DIR does not exist!"
     exit 1
 fi
 
-BACKUP_FILE="$1"
+BACKUP_FILES=($(ls "$BACKUP_DIR"/*.tar.gz 2>/dev/null))
+if [[ ${#BACKUP_FILES[@]} -eq 0 ]]; then
+    echo "[$(timestamp)] [ERROR] No backup files found in $BACKUP_DIR!"
+    exit 1
+fi
+
+for i in "${!BACKUP_FILES[@]}"; do
+    echo "$((i + 1)). ${BACKUP_FILES[$i]}"
+done
+
+# PROMPT USER TO SELECT A BACKUP FILE
+read -p "[$(timestamp)] [PROMPT] Enter the number of the backup file to restore: " FILE_INDEX
+if ! [[ "$FILE_INDEX" =~ ^[0-9]+$ ]] || ((FILE_INDEX < 1 || FILE_INDEX > ${#BACKUP_FILES[@]})); then
+    echo "[$(timestamp)] [ERROR] Invalid selection!"
+    exit 1
+fi
+
+BACKUP_FILE="${BACKUP_FILES[$((FILE_INDEX - 1))]}"
+
+# CONFIRM RESTORE OPERATION
+read -p "[$(timestamp)] [PROMPT] Are you sure you want to restore the backup from $BACKUP_FILE? (yes/no): " CONFIRM
+if [[ "$CONFIRM" != "yes" ]]; then
+    echo "[$(timestamp)] [INFO] Restore operation cancelled."
+    exit 0
+fi
 
 # CHECK IF FILE EXISTS
 if [[ ! -f "$BACKUP_FILE" ]]; then
