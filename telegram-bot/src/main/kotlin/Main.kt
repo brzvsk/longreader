@@ -18,16 +18,22 @@ fun main() {
         val botsApplication = TelegramBotsLongPollingApplication()
         val bot = ReadLaterBot()
         if (botEnvironment == "prod") {
-            botsApplication.registerBot(botKey, { TelegramUrl("https", "api.telegram.org", 443, false) }, DefaultGetUpdatesGenerator(), bot)
+            botsApplication.registerBot(
+                botKey,
+                { TelegramUrl("https", "api.telegram.org", 443, false) },
+                DefaultGetUpdatesGenerator(),
+                bot
+            )
         } else {
-            botsApplication.registerBot(botKey, { TelegramUrl("https", "api.telegram.org", 443, true) }, DefaultGetUpdatesGenerator(), bot)
+            botsApplication.registerBot(
+                botKey,
+                { TelegramUrl("https", "api.telegram.org", 443, true) },
+                DefaultGetUpdatesGenerator(),
+                bot
+            )
         }
-        //bot.notifyChangelog()
 
     } catch (e: TelegramApiException) {
         e.printStackTrace()
     }
-
-    val dbHelper = DatabaseHelper()
-    dbHelper.initClient()
 }
