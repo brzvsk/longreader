@@ -40,7 +40,7 @@ class ReadLaterBot : LongPollingSingleThreadUpdateConsumer {
         val message = update.message
         val fromId = message.from.id
 
-        if (isValidUrl(message.text)) {
+        if (message != null && message.text.isNullOrBlank().not() && isValidUrl(message.text)) {
             sendToParser(message.text, fromId.toString(), telegramClient)
         } else {
             sendText(fromId, "Not a link", telegramClient)
