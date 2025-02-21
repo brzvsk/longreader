@@ -2,12 +2,20 @@
 
 # CONFIGURATION
 BACKUP_DIR="/root/longreader/mongo_backups"
-DB_NAME="longreader"
+LOG_FILE="/root/longreader/logs/backup_log.txt"
+DAYS_TO_KEEP=7
+
+# DB params
+
+DB_NAME=""
+DB_USERNAME=""
+DB_PASSWORD=""
+AUTH_DB=""
+
+# S3 params
 SPACE_NAME="longreader-backups"
 SPACE_REGION="fra1"
-DAYS_TO_KEEP=7
 S3_ENDPOINT="https://fra1.digitaloceanspaces.com"
-LOG_FILE="/root/longreader/logs/backup_log.txt"
 
 # TIMESTAMP FUNCTION
 timestamp() {
@@ -24,7 +32,7 @@ log "[INFO] Starting MongoDB backup..."
 
 # Create MongoDB Backup
 log "[INFO] Creating MongoDB backup..."
-mongodump --host localhost --port 27017 --db $DB_NAME --out $BACKUP_DIR/backup_$(date +"%Y-%m-%d")
+mongodump --host localhost --port 27017 --db $DB_NAME --username $DB_USERNAME --password $DB_PASSWORD --authenticationDatabase $AUTH_DB --out $BACKUP_DIR/backup_$(date +"%Y-%m-%d")
 if [[ $? -ne 0 ]]; then
     log "[ERROR] MongoDB backup failed!"
     exit 1

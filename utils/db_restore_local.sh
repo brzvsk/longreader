@@ -2,7 +2,13 @@
 
 # CONFIGURATION
 BACKUP_DIR="/root/longreader/mongo_backups"
-DB_NAME="longreader"
+
+
+# DB configs
+DB_NAME=""
+DB_USERNAME=""
+DB_PASSWORD=""
+AUTH_DB=""
 
 # TIMESTAMP FUNCTION
 timestamp() {
@@ -67,4 +73,4 @@ if [[ -z "$EXTRACTED_DIR" ]]; then
 fi
 
 echo "[$(timestamp)] [INFO] Restoring MongoDB database..."
-mongorestore --host localhost --port 27017 --drop --nsInclude="$DB_NAME.*" --dir="$BACKUP_DIR/$EXTRACTED_DIR/"
+mongorestore --host localhost --port 27017 --username $DB_USERNAME --password $DB_PASSWORD --authenticationDatabase $AUTH_DB --drop --nsInclude="$DB_NAME.*" --dir="$BACKUP_DIR/$EXTRACTED_DIR/"

@@ -2,7 +2,16 @@
 
 # CONFIGURATION
 BACKUP_DIR="/root/longreader/mongo_backups"
-DB_NAME="longreader"
+
+# DB configs
+
+DB_NAME=""
+DB_USERNAME=""
+DB_PASSWORD=""
+AUTH_DB=""
+
+# S3 configs
+
 SPACE_NAME="longreader-backups"
 SPACE_REGION="fra1"
 S3_ENDPOINT="https://$SPACE_REGION.digitaloceanspaces.com"
@@ -59,7 +68,7 @@ if [[ -z "$EXTRACTED_DIR" ]]; then
 fi
 
 echo "[$(timestamp)] [INFO] Restoring MongoDB database..."
-mongorestore --host localhost --port 27017 --drop --nsInclude="$DB_NAME.*" --dir="$BACKUP_DIR/$EXTRACTED_DIR/"
+mongorestore --host localhost --port 27017 --username $DB_USERNAME --password $DB_PASSWORD --authenticationDatabase $AUTH_DB --drop --nsInclude="$DB_NAME.*" --dir="$BACKUP_DIR/$EXTRACTED_DIR/"
 if [[ $? -ne 0 ]]; then
     echo "[$(timestamp)] [ERROR] MongoDB restore failed!"
     exit 1
