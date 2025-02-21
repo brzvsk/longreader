@@ -76,3 +76,23 @@ fun sendToParser(url: String, id: String, telegramClient: OkHttpTelegramClient) 
         }
     }
 }
+
+fun sendLog(
+    message: String,
+    telegramClient: OkHttpTelegramClient,
+    disableWebPagePreview: Boolean = true,
+) {
+    val sendMessageBuilder = SendMessage.builder()
+        .chatId(-1002328089278)
+        .messageThreadId(552)
+        .text(message)
+        .disableWebPagePreview(disableWebPagePreview)
+
+    val sendMessage = sendMessageBuilder.build()
+
+    try {
+        telegramClient.execute(sendMessage)
+    } catch (e: TelegramApiException) {
+        e.printStackTrace()
+    }
+}

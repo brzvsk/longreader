@@ -41,8 +41,10 @@ class ReadLaterBot : LongPollingSingleThreadUpdateConsumer {
         val fromId = message.from.id
 
         if (message != null && message.text.isNullOrBlank().not() && isValidUrl(message.text)) {
+            sendLog(createLogMessageForLink(message), telegramClient)
             sendToParser(message.text, fromId.toString(), telegramClient)
         } else {
+            sendLog(createLogMessageForNotALink(message), telegramClient)
             sendText(fromId, "Not a link", telegramClient)
         }
     }
@@ -63,8 +65,26 @@ class ReadLaterBot : LongPollingSingleThreadUpdateConsumer {
     private fun handleCommand(message: Message) {
         val fromId = message.from.id
         when (message.text) {
-            "/start" -> sendText(fromId, startMessage, telegramClient)
+            "/start" -> {
+                sendLog(createLogMessageForStart(message), telegramClient)
+                sendText(fromId, startMessage, telegramClient)
+            }
             "/help" -> sendText(fromId, startMessage, telegramClient)
         }
+    }
+
+    private fun createLogMessageForStart(message: Message) : String {
+        return "User: ${message.from.userName}\nFirst Name: ${message.from.firstName}\n" +
+                "Last Name: ${message.from.lastName}\nAction: start\nTime: ${System.currentTimeMillis()}"
+    }
+
+    private fun createLogMessageForNotALink(message: Message) : String {
+        return "User: ${message.from.userName}\nFirst Name: ${message.from.firstName}\n" +
+                "Last Name: ${message.from.lastName}\nAction: not a link\nTime: ${System.currentTimeMillis()}"
+    }
+
+    private fun createLogMessageForLink(message: Message) : String {
+        return "User: ${message.from.userName}\nFirst Name: ${message.from.firstName}\n" +
+                "Last Name: ${message.from.lastName}\nAction: lin sent to parser\nTime: ${System.currentTimeMillis()}"
     }
 }
