@@ -71,7 +71,7 @@ fun sendToParser(url: String, id: String, telegramClient: OkHttpTelegramClient) 
             sendText(id.toLong(), sentToParserSuccessMessage, telegramClient)
             println("Response: ${response.body?.string()}")
         } else {
-            sendText(id.toLong(), "Saving is failed :(", telegramClient)
+            sendText(id.toLong(), "Saving is failed :( We're aware of this issue and working on it 💫", telegramClient)
             println("Request failed: ${response.code}")
         }
     }

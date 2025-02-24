@@ -140,37 +140,11 @@ class ParseArticleRequest(BaseModel):
     url: str
 
 @app.post("/users/{user_id}/articles/parse", response_model=dict)
-async def parse_article(user_id: str, request: ParseArticleRequest, background_tasks: BackgroundTasks):
+async def parse_article(user_id: str, request: ParseArticleRequest):
     """Parse article and create user-article link"""
-    logger = logging.getLogger(__name__)
-    logger.info(f"Received parse request for URL: {request.url} from user: {user_id}")
-    
     try:
-        # If user never opened the app before, we create a new user
-        user = await get_or_create_by_telegram_id(user_id)
-        actual_user_id = str(user.id)
-        
-        # Create article and user article link
-        logger.debug(f"Creating article and user-article link for URL: {request.url}")
-        article, user_article = await ParserService.create_parsing_article(request.url, actual_user_id)
-        logger.info(f"Created article {article['_id']} and user-article link {user_article['_id']}")
-        
-        # Start background parsing task
-        logger.debug(f"Starting background parsing task for article: {article['_id']}")
-        background_tasks.add_task(ParserService.parse_article, article['_id'])
-        logger.info(f"Background parsing task scheduled for article: {article['_id']}")
-        
-        response_data = {
-            "article_id": str(article['_id']),
-            "user_article_id": str(user_article['_id']),
-            "status": article['status'],
-            "url": request.url
-        }
-        logger.debug(f"Returning response: {response_data}")
-        return response_data
-        
+        return await ParserService.handle_parse_request(request.url, user_id)
     except Exception as e:
-        logger.error(f"Failed to process parse request for URL: {request.url}", exc_info=True)
         raise HTTPException(
             status_code=500,
             detail=f"Failed to parse article: {str(e)}"

@@ -6,51 +6,15 @@ import httpx
 from datetime import datetime
 from bson import ObjectId
 import logging
+from fastapi import HTTPException
 
-from ..models.article import Article, ArticleStatus, UserArticle, ArticleMetadata
+from ..models.article import Article, ArticleMetadata
 from ..database import articles, user_articles
+from ..services.user_service import get_or_create_by_telegram_id
 
 logger = logging.getLogger(__name__)
 
 class ParserService:
-    @staticmethod
-    async def create_parsing_article(url: str, user_id: str) -> tuple[dict, dict]:
-        """Create a new article in parsing status and link it to user"""
-        logger.info(f"Creating new article for URL: {url} and user_id: {user_id}")
-        try:
-            # Create article with minimal metadata
-            article = Article(
-                title="Parsing...",
-                short_description="Article is being parsed...",
-                metadata=ArticleMetadata(
-                    source_url=url,
-                    reading_time=0,  # Initial reading time
-                    author=None,
-                    publish_date=None
-                ),
-                status=ArticleStatus.PARSING
-            )
-            result_article = await articles.insert_one(article.model_dump(by_alias=True, exclude={"id"}))
-            created_article = await articles.find_one({"_id": result_article.inserted_id})
-            logger.info(f"Created article with id: {created_article['_id']}")
-            
-            # Create user article link with explicit ObjectId conversion
-            user_article_data = {
-                "user_id": ObjectId(user_id),
-                "article_id": result_article.inserted_id,  # Already an ObjectId
-                "progress": {"percentage": 0, "last_position": 0},
-                "timestamps": {"saved_at": datetime.utcnow()}
-            }
-            
-            result_user_article = await user_articles.insert_one(user_article_data)
-            created_user_article = await user_articles.find_one({"_id": result_user_article.inserted_id})
-            logger.info(f"Created user-article link with id: {created_user_article['_id']}")
-            
-            return created_article, created_user_article
-        except Exception as e:
-            logger.error(f"Failed to create article and user-article link: {str(e)}")
-            raise
-
     @staticmethod
     def _parse_date(date_str: Optional[str]) -> Optional[datetime]:
         """Parse date string to datetime"""
@@ -96,22 +60,18 @@ class ParserService:
         return title, description, article_metadata
 
     @staticmethod
-    async def parse_article(article_id: ObjectId):
-        """Background task to parse the article"""
-        logger.info(f"Starting parsing task for article_id: {article_id}")
+    def parse_url(url: str) -> tuple[str, str, str, ArticleMetadata]:
+        """Parse URL and return content with metadata"""
+        logger.info(f"Starting parsing URL: {url}")
+        
         try:
-            # Fetch the article to parse
-            article_data = await articles.find_one({"_id": article_id})
-            article = Article(**article_data)
-            source_url = article.metadata.source_url
-            
             # Fetch the webpage
-            logger.info(f"Fetching content from URL: {source_url}")
-            async with httpx.AsyncClient() as client:
-                response = await client.get(source_url)
+            logger.info(f"Fetching content from URL: {url}")
+            with httpx.Client() as client:
+                response = client.get(url)
                 response.raise_for_status()
                 html_content = response.text
-                logger.info(f"Successfully fetched URL: {source_url}")
+                logger.info(f"Successfully fetched URL: {url}")
             
             # Configure trafilatura
             config = use_config()
@@ -135,40 +95,79 @@ class ParserService:
             )
             
             if not content:
-                logger.error(f"Failed to extract content from URL: {source_url}")
+                logger.error(f"Failed to extract content from URL: {url}")
                 raise ValueError("Failed to extract content from URL")
             
             logger.info(f"Successfully extracted content (length: {len(content)} chars)")
             
             # Extract metadata
-            title, description, article_metadata = ParserService._extract_metadata(downloaded, content, source_url)
-            
-            # Update the article
-            await articles.update_one(
-                {"_id": article_id},
-                {
-                    "$set": {
-                        "title": title,
-                        "content": content,
-                        "short_description": description,
-                        "metadata": article_metadata.model_dump(),
-                        "status": ArticleStatus.COMPLETED
-                    }
-                }
-            )
-            logger.info(f"Successfully completed parsing article {article_id}")
+            title, description, article_metadata = ParserService._extract_metadata(downloaded, content, url)
+            return content, title, description, article_metadata
             
         except httpx.HTTPError as e:
             logger.error(f"HTTP error while fetching URL: {str(e)}")
-            await articles.update_one(
-                {"_id": article_id},
-                {"$set": {"status": ArticleStatus.FAILED, "metadata.error": f"Failed to fetch URL: {str(e)}"}}
+            raise HTTPException(
+                status_code=400,
+                detail=f"Failed to fetch URL: {str(e)}"
             )
+        except Exception as e:
+            logger.error(f"Error parsing URL {url}: {str(e)}", exc_info=True)
+            raise HTTPException(
+                status_code=400,
+                detail=str(e)
+            )
+
+    @staticmethod
+    async def handle_parse_request(url: str, user_id: str) -> dict:
+        """Handle complete article parsing flow including user creation and error handling"""
+        logger.info(f"Handling parse request for URL: {url} from user: {user_id}")
+        try:
+            # If user never opened the app before, we create a new user
+            user = await get_or_create_by_telegram_id(user_id)
+            actual_user_id = str(user.id)
+            
+            # Parse URL first
+            content, title, description, article_metadata = ParserService.parse_url(url)
+            
+            # Create article with parsed content
+            article = Article(
+                title=title,
+                content=content,
+                short_description=description,
+                metadata=article_metadata
+            )
+            
+            # Save article to database
+            result_article = await articles.insert_one(article.model_dump(by_alias=True, exclude={"id"}))
+            created_article = await articles.find_one({"_id": result_article.inserted_id})
+            logger.info(f"Created article with id: {created_article['_id']}")
+            
+            # Create user article link
+            user_article_data = {
+                "user_id": ObjectId(actual_user_id),
+                "article_id": result_article.inserted_id,
+                "progress": {"percentage": 0, "last_position": 0},
+                "timestamps": {"saved_at": datetime.utcnow()}
+            }
+            
+            result_user_article = await user_articles.insert_one(user_article_data)
+            created_user_article = await user_articles.find_one({"_id": result_user_article.inserted_id})
+            logger.info(f"Created user-article link with id: {created_user_article['_id']}")
+            
+            response_data = {
+                "article_id": str(created_article['_id']),
+                "user_article_id": str(created_user_article['_id']),
+                "url": url
+            }
+            logger.debug(f"/parse returning response: {response_data}")
+            return response_data
+            
+        except HTTPException:
+            # Re-raise HTTP exceptions as is
             raise
         except Exception as e:
-            logger.error(f"Error parsing article {article_id}: {str(e)}", exc_info=True)
-            await articles.update_one(
-                {"_id": article_id},
-                {"$set": {"status": ArticleStatus.FAILED, "metadata.error": str(e)}}
-            )
-            raise 
+            logger.error(f"Failed to process parse request for URL: {url}", exc_info=True)
+            raise HTTPException(
+                status_code=500,
+                detail=f"Internal server error: {str(e)}"
+            ) 
