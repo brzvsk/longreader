@@ -146,7 +146,7 @@ async def parse_article(user_id: str, request: ParseArticleRequest, background_t
     logger.info(f"Received parse request for URL: {request.url} from user: {user_id}")
     
     try:
-        # Get or create user by telegram ID
+        # If user never opened the app before, we create a new user
         user = await get_or_create_by_telegram_id(user_id)
         actual_user_id = str(user.id)
         
