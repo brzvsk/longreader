@@ -7,6 +7,7 @@ from datetime import datetime
 from bson import ObjectId
 import logging
 from fastapi import HTTPException
+import random
 
 from ..models.article import Article, ArticleMetadata
 from ..database import articles, user_articles
@@ -15,6 +16,19 @@ from ..services.user_service import get_or_create_by_telegram_id
 logger = logging.getLogger(__name__)
 
 class ParserService:
+    # Common modern mobile user agents
+    USER_AGENTS = [
+        "Mozilla/5.0 (iPhone; CPU iPhone OS 17_3_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.3.1 Mobile/15E148 Safari/604.1",
+        "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Mobile Safari/537.36",
+        "Mozilla/5.0 (Linux; Android 14; Samsung SM-S918B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Mobile Safari/537.36",
+        "Mozilla/5.0 (iPhone; CPU iPhone OS 17_3_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/122.0.6261.89 Mobile/15E148 Safari/604.1"
+    ]
+    
+    @staticmethod
+    def _get_random_user_agent() -> str:
+        """Return a random modern user agent string"""
+        return random.choice(ParserService.USER_AGENTS)
+
     @staticmethod
     def _parse_date(date_str: Optional[str]) -> Optional[datetime]:
         """Parse date string to datetime"""
@@ -65,10 +79,27 @@ class ParserService:
         logger.info(f"Starting parsing URL: {url}")
         
         try:
-            # Fetch the webpage
+            # Fetch the webpage with a realistic mobile user agent
             logger.info(f"Fetching content from URL: {url}")
+            headers = {
+                "User-Agent": ParserService._get_random_user_agent(),
+                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+                "Accept-Language": "en-US,en;q=0.5",
+                "Accept-Encoding": "gzip, deflate, br",
+                "DNT": "1",
+                "Connection": "keep-alive",
+                "Upgrade-Insecure-Requests": "1",
+                "Sec-Fetch-Dest": "document",
+                "Sec-Fetch-Mode": "navigate",
+                "Sec-Fetch-Site": "none",
+                "Sec-Fetch-User": "?1",
+                # Mobile-specific headers
+                "Viewport-Width": "390",
+                "Width": "390",
+                "Save-Data": "on"
+            }
             with httpx.Client() as client:
-                response = client.get(url)
+                response = client.get(url, headers=headers, follow_redirects=True)
                 response.raise_for_status()
                 html_content = response.text
                 logger.info(f"Successfully fetched URL: {url}")
