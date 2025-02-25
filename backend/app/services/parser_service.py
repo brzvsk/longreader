@@ -130,9 +130,18 @@ class ParserService:
             )
 
     @staticmethod
-    def parse_url(url: str) -> tuple[str, str, str, ArticleMetadata]:
-        """Parse URL and return content with metadata"""
-        logger.info(f"Starting parsing URL: {url}")
+    def parse_url(url: str) -> Article:
+        """Parse URL and return an Article object
+        
+        Args:
+            url: The URL to parse
+            
+        Returns:
+            Article: A fully populated Article object
+            
+        Raises:
+            HTTPException: If there's an error fetching or parsing the content
+        """
         
         try:
             # Fetch the HTML content
@@ -167,7 +176,16 @@ class ParserService:
             
             # Extract metadata
             title, description, article_metadata = ParserService._extract_metadata(downloaded, content, url)
-            return content, title, description, article_metadata
+            
+            # Create and return Article object
+            article = Article(
+                title=title,
+                content=content,
+                short_description=description,
+                metadata=article_metadata
+            )
+            
+            return article
             
         except HTTPException:
             # Re-raise HTTP exceptions as is
@@ -188,21 +206,11 @@ class ParserService:
             user = await get_or_create_by_telegram_id(user_id)
             actual_user_id = str(user.id)
             
-            # Parse URL first
-            content, title, description, article_metadata = ParserService.parse_url(url)
-            
-            # Create article with parsed content
-            article = Article(
-                title=title,
-                content=content,
-                short_description=description,
-                metadata=article_metadata
-            )
+            # Parse URL to get Article object
+            article = ParserService.parse_url(url)
             
             # Save article to database
             result_article = await articles.insert_one(article.model_dump(by_alias=True, exclude={"id"}))
-            created_article = await articles.find_one({"_id": result_article.inserted_id})
-            logger.info(f"Created article with id: {created_article['_id']}")
             
             # Create user article link
             user_article_data = {
@@ -213,15 +221,12 @@ class ParserService:
             }
             
             result_user_article = await user_articles.insert_one(user_article_data)
-            created_user_article = await user_articles.find_one({"_id": result_user_article.inserted_id})
-            logger.info(f"Created user-article link with id: {created_user_article['_id']}")
             
             response_data = {
-                "article_id": str(created_article['_id']),
-                "user_article_id": str(created_user_article['_id']),
+                "article_id": str(result_article.inserted_id),
+                "user_article_id": str(result_user_article.inserted_id),
                 "url": url
             }
-            logger.debug(f"/parse returning response: {response_data}")
             return response_data
             
         except HTTPException:
