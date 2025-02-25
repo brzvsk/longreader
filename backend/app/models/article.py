@@ -7,11 +7,6 @@ from bson import ObjectId
 
 PyObjectId = Annotated[str, BeforeValidator(str)]
 
-class ArticleStatus(str, Enum):
-    PARSING = "parsing"
-    COMPLETED = "completed"
-    FAILED = "failed"
-
 class ArticleMetadata(BaseModel):
     source_url: str
     author: Optional[str] = None
@@ -20,7 +15,6 @@ class ArticleMetadata(BaseModel):
 
 class Article(BaseModel):
     id: Optional[PyObjectId] = Field(alias="_id", default=None)
-    status: ArticleStatus = ArticleStatus.PARSING
     title: str = Field(...)
     content: Optional[str] = None
     short_description: str = Field(...)
