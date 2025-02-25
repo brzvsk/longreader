@@ -74,13 +74,21 @@ class ParserService:
         return title, description, article_metadata
 
     @staticmethod
-    def parse_url(url: str) -> tuple[str, str, str, ArticleMetadata]:
-        """Parse URL and return content with metadata"""
-        logger.info(f"Starting parsing URL: {url}")
+    def _fetch_html_content(url: str) -> str:
+        """Fetch HTML content from a URL.
         
+        Args:
+            url: The URL to fetch content from
+            
+        Returns:
+            The HTML content as a string
+            
+        Raises:
+            HTTPException: If there's an error fetching the content
+        """
+        logger.info(f"Fetching content from URL: {url}")
         try:
-            # Fetch the webpage with a realistic mobile user agent
-            logger.info(f"Fetching content from URL: {url}")
+            # Prepare headers with a realistic mobile user agent
             headers = {
                 "User-Agent": ParserService._get_random_user_agent(),
                 "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
@@ -98,11 +106,37 @@ class ParserService:
                 "Width": "390",
                 "Save-Data": "on"
             }
+            
+            # Make the HTTP request
             with httpx.Client() as client:
                 response = client.get(url, headers=headers, follow_redirects=True)
                 response.raise_for_status()
                 html_content = response.text
                 logger.info(f"Successfully fetched URL: {url}")
+                
+            return html_content
+            
+        except httpx.HTTPError as e:
+            logger.error(f"HTTP error while fetching URL: {str(e)}")
+            raise HTTPException(
+                status_code=400,
+                detail=f"Failed to fetch URL: {str(e)}"
+            )
+        except Exception as e:
+            logger.error(f"Error fetching URL {url}: {str(e)}", exc_info=True)
+            raise HTTPException(
+                status_code=400,
+                detail=f"Failed to fetch URL: {str(e)}"
+            )
+
+    @staticmethod
+    def parse_url(url: str) -> tuple[str, str, str, ArticleMetadata]:
+        """Parse URL and return content with metadata"""
+        logger.info(f"Starting parsing URL: {url}")
+        
+        try:
+            # Fetch the HTML content
+            html_content = ParserService._fetch_html_content(url)
             
             # Configure trafilatura
             config = use_config()
@@ -135,12 +169,9 @@ class ParserService:
             title, description, article_metadata = ParserService._extract_metadata(downloaded, content, url)
             return content, title, description, article_metadata
             
-        except httpx.HTTPError as e:
-            logger.error(f"HTTP error while fetching URL: {str(e)}")
-            raise HTTPException(
-                status_code=400,
-                detail=f"Failed to fetch URL: {str(e)}"
-            )
+        except HTTPException:
+            # Re-raise HTTP exceptions as is
+            raise
         except Exception as e:
             logger.error(f"Error parsing URL {url}: {str(e)}", exc_info=True)
             raise HTTPException(
