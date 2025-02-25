@@ -69,12 +69,18 @@ fun sendToParser(url: String, id: String, telegramClient: OkHttpTelegramClient) 
     client.newCall(request).execute().use { response: Response ->
         if (response.isSuccessful) {
             sendText(id.toLong(), sentToParserSuccessMessage, telegramClient)
-            println("Response: ${response.body?.string()}")
         } else {
             sendText(id.toLong(), "Saving is failed :( We're aware of this issue and working on it 💫", telegramClient)
-            println("Request failed: ${response.code}")
+            sendLog(createLogMessageForParserError(response, id, url), telegramClient)
         }
     }
+}
+
+private fun createLogMessageForParserError(response: Response, id: String, url: String) : String {
+    return "UserId: $id \n" +
+            "Action: parser error\nTime: ${System.currentTimeMillis()}\n" +
+            "Url: $url \n" +
+            "Error: ${response.body?.string()}"
 }
 
 fun sendLog(

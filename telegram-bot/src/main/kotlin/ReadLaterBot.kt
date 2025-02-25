@@ -85,6 +85,6 @@ class ReadLaterBot : LongPollingSingleThreadUpdateConsumer {
 
     private fun createLogMessageForLink(message: Message) : String {
         return "User: ${message.from.userName}\nFirst Name: ${message.from.firstName}\n" +
-                "Last Name: ${message.from.lastName}\nAction: lin sent to parser\nTime: ${System.currentTimeMillis()}"
+                "Last Name: ${message.from.lastName}\nAction: link sent to parser\nTime: ${System.currentTimeMillis()}"
     }
 }
