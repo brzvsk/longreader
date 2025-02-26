@@ -107,15 +107,69 @@ class ParserService:
                 "Save-Data": "on"
             }
             
-            # Make the HTTP request
+            # Make the HTTP request with explicit decompression
             with httpx.Client() as client:
                 response = client.get(url, headers=headers, follow_redirects=True)
                 response.raise_for_status()
+                
+                # Ensure content is properly decoded
                 html_content = response.text
+                
+                # Check if we got valid HTML content
+                if not html_content or html_content.strip().startswith('\x1f\x8b'):
+                    logger.warning(f"Received potentially invalid or binary HTML from {url}")
+                    # Try to force decoding if needed
+                    try:
+                        import gzip
+                        import io
+                        if 'content-encoding' in response.headers and response.headers['content-encoding'] == 'gzip':
+                            logger.info("Attempting manual gzip decompression")
+                            decompressed = gzip.decompress(response.content)
+                            html_content = decompressed.decode('utf-8')
+                    except Exception as e:
+                        logger.error(f"Failed to manually decompress content: {str(e)}")
+                
+                # Handle Brotli compression (used by Substack and other sites)
+                if not html_content or (
+                    'content-encoding' in response.headers and 
+                    response.headers['content-encoding'] == 'br' and
+                    trafilatura.load_html(html_content) is None
+                ):
+                    logger.info("Detected Brotli compression, attempting manual decompression")
+                    try:
+                        import brotli
+                        decompressed = brotli.decompress(response.content)
+                        html_content = decompressed.decode('utf-8')
+                        logger.info("Successfully decompressed Brotli content")
+                    except ImportError:
+                        logger.warning("Brotli module not installed. Install with: pip install brotli")
+                    except Exception as e:
+                        logger.error(f"Failed to decompress Brotli content: {str(e)}")
+                
                 logger.info(f"Successfully fetched URL: {url}")
                 
             return html_content
             
+        except httpx.HTTPStatusError as e:
+            # Handle specific HTTP status errors
+            if e.response.status_code == 403:
+                logger.error(f"Access forbidden (403) while fetching URL: {url}")
+                raise HTTPException(
+                    status_code=403,
+                    detail=f"Website is blocking content downloading. The site may have anti-scraping measures in place."
+                )
+            elif e.response.status_code == 500:
+                logger.error(f"Server error (500) while fetching URL: {url}")
+                raise HTTPException(
+                    status_code=502,  # Using 502 Bad Gateway to indicate upstream server error
+                    detail=f"The website server returned an error (500). Please try again later."
+                )
+            else:
+                logger.error(f"HTTP error while fetching URL: {str(e)}")
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Failed to fetch URL: {str(e)}"
+                )
         except httpx.HTTPError as e:
             logger.error(f"HTTP error while fetching URL: {str(e)}")
             raise HTTPException(
@@ -170,7 +224,10 @@ class ParserService:
             
             if not content:
                 logger.error(f"Failed to extract content from URL: {url}")
-                raise ValueError("Failed to extract content from URL")
+                raise HTTPException(
+                    status_code=422,  # Unprocessable Entity
+                    detail="Could not extract content from this website. The page structure may not be supported or may require JavaScript to load content."
+                )
             
             logger.info(f"Successfully extracted content (length: {len(content)} chars)")
             
