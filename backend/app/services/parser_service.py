@@ -75,13 +75,21 @@ class ParserService:
         return title, description, article_metadata
 
     @staticmethod
-    def parse_url(url: str) -> tuple[str, str, str, ArticleMetadata]:
-        """Parse URL and return content with metadata"""
-        logger.info(f"Starting parsing URL: {url}")
+    def _fetch_html_content(url: str) -> str:
+        """Fetch HTML content from a URL.
         
+        Args:
+            url: The URL to fetch content from
+            
+        Returns:
+            The HTML content as a string
+            
+        Raises:
+            HTTPException: If there's an error fetching the content
+        """
+        logger.info(f"Fetching content from URL: {url}")
         try:
-            # Fetch the webpage with a realistic mobile user agent
-            logger.info(f"Fetching content from URL: {url}")
+            # Prepare headers with a realistic mobile user agent
             headers = {
                 "User-Agent": ParserService._get_random_user_agent(),
                 "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
@@ -99,11 +107,100 @@ class ParserService:
                 "Width": "390",
                 "Save-Data": "on"
             }
+            
+            # Make the HTTP request with explicit decompression
             with httpx.Client() as client:
                 response = client.get(url, headers=headers, follow_redirects=True)
                 response.raise_for_status()
+                
+                # Ensure content is properly decoded
                 html_content = response.text
+                
+                # Check if we got valid HTML content
+                if not html_content or html_content.strip().startswith('\x1f\x8b'):
+                    logger.warning(f"Received potentially invalid or binary HTML from {url}")
+                    # Try to force decoding if needed
+                    try:
+                        import gzip
+                        import io
+                        if 'content-encoding' in response.headers and response.headers['content-encoding'] == 'gzip':
+                            logger.info("Attempting manual gzip decompression")
+                            decompressed = gzip.decompress(response.content)
+                            html_content = decompressed.decode('utf-8')
+                    except Exception as e:
+                        logger.error(f"Failed to manually decompress content: {str(e)}")
+                
+                # Handle Brotli compression (used by Substack and other sites)
+                if not html_content or (
+                    'content-encoding' in response.headers and 
+                    response.headers['content-encoding'] == 'br' and
+                    trafilatura.load_html(html_content) is None
+                ):
+                    logger.info("Detected Brotli compression, attempting manual decompression")
+                    try:
+                        import brotli
+                        decompressed = brotli.decompress(response.content)
+                        html_content = decompressed.decode('utf-8')
+                        logger.info("Successfully decompressed Brotli content")
+                    except ImportError:
+                        logger.warning("Brotli module not installed. Install with: pip install brotli")
+                    except Exception as e:
+                        logger.error(f"Failed to decompress Brotli content: {str(e)}")
+                
                 logger.info(f"Successfully fetched URL: {url}")
+                
+            return html_content
+            
+        except httpx.HTTPStatusError as e:
+            # Handle specific HTTP status errors
+            if e.response.status_code == 403:
+                logger.error(f"Access forbidden (403) while fetching URL: {url}")
+                raise HTTPException(
+                    status_code=403,
+                    detail=f"Website is blocking content downloading. The site may have anti-scraping measures in place."
+                )
+            elif e.response.status_code == 500:
+                logger.error(f"Server error (500) while fetching URL: {url}")
+                raise HTTPException(
+                    status_code=502,  # Using 502 Bad Gateway to indicate upstream server error
+                    detail=f"The website server returned an error (500). Please try again later."
+                )
+            else:
+                logger.error(f"HTTP error while fetching URL: {str(e)}")
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Failed to fetch URL: {str(e)}"
+                )
+        except httpx.HTTPError as e:
+            logger.error(f"HTTP error while fetching URL: {str(e)}")
+            raise HTTPException(
+                status_code=400,
+                detail=f"Failed to fetch URL: {str(e)}"
+            )
+        except Exception as e:
+            logger.error(f"Error fetching URL {url}: {str(e)}", exc_info=True)
+            raise HTTPException(
+                status_code=400,
+                detail=f"Failed to fetch URL: {str(e)}"
+            )
+
+    @staticmethod
+    def parse_url(url: str) -> Article:
+        """Parse URL and return an Article object
+        
+        Args:
+            url: The URL to parse
+            
+        Returns:
+            Article: A fully populated Article object
+            
+        Raises:
+            HTTPException: If there's an error fetching or parsing the content
+        """
+        
+        try:
+            # Fetch the HTML content
+            html_content = ParserService._fetch_html_content(url)
             
             # Configure trafilatura
             config = use_config()
@@ -128,20 +225,29 @@ class ParserService:
             
             if not content:
                 logger.error(f"Failed to extract content from URL: {url}")
-                raise ValueError("Failed to extract content from URL")
+                raise HTTPException(
+                    status_code=422,  # Unprocessable Entity
+                    detail="Could not extract content from this website. The page structure may not be supported or may require JavaScript to load content."
+                )
             
             logger.info(f"Successfully extracted content (length: {len(content)} chars)")
             
             # Extract metadata
             title, description, article_metadata = ParserService._extract_metadata(downloaded, content, url)
-            return content, title, description, article_metadata
             
-        except httpx.HTTPError as e:
-            logger.error(f"HTTP error while fetching URL: {str(e)}")
-            raise HTTPException(
-                status_code=400,
-                detail=f"Failed to fetch URL: {str(e)}"
+            # Create and return Article object
+            article = Article(
+                title=title,
+                content=content,
+                short_description=description,
+                metadata=article_metadata
             )
+            
+            return article
+            
+        except HTTPException:
+            # Re-raise HTTP exceptions as is
+            raise
         except Exception as e:
             logger.error(f"Error parsing URL {url}: {str(e)}", exc_info=True)
             raise HTTPException(
@@ -176,20 +282,10 @@ class ParserService:
                 )
 
             # Parse URL first
-            content, title, description, article_metadata = ParserService.parse_url(url)
-            
-            # Create article with parsed content
-            article = Article(
-                title=title,
-                content=content,
-                short_description=description,
-                metadata=article_metadata
-            )
+            article = ParserService.parse_url(url)
             
             # Save article to database
             result_article = await articles.insert_one(article.model_dump(by_alias=True, exclude={"id"}))
-            created_article = await articles.find_one({"_id": result_article.inserted_id})
-            logger.info(f"Created article with id: {created_article['_id']}")
             
             # Create user article link
             user_article_data = {
@@ -200,15 +296,12 @@ class ParserService:
             }
             
             result_user_article = await user_articles.insert_one(user_article_data)
-            created_user_article = await user_articles.find_one({"_id": result_user_article.inserted_id})
-            logger.info(f"Created user-article link with id: {created_user_article['_id']}")
             
             response_data = {
-                "article_id": str(created_article['_id']),
-                "user_article_id": str(created_user_article['_id']),
+                "article_id": str(result_article.inserted_id),
+                "user_article_id": str(result_user_article.inserted_id),
                 "url": url
             }
-            logger.debug(f"/parse returning response: {response_data}")
             return response_data
             
         except HTTPException:

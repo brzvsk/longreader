@@ -36,4 +36,8 @@ wheels/
 .env.local
 
 # Logs
-*.log 
+*.log
+
+# Test data
+tests/test_data/
+tests/.pytest_cache/ 
