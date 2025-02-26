@@ -3,7 +3,8 @@ import asyncio
 import trafilatura
 from trafilatura.settings import use_config
 import httpx
-from datetime import datetime
+from datetime import datetime, timedelta
+import os
 from bson import ObjectId
 import logging
 from fastapi import HTTPException
@@ -148,6 +149,9 @@ class ParserService:
                 detail=str(e)
             )
 
+    # Configurable daily article limit
+    DAILY_ARTICLE_LIMIT = int(os.getenv("DAILY_ARTICLE_LIMIT", 10))
+
     @staticmethod
     async def handle_parse_request(url: str, user_id: str) -> dict:
         """Handle complete article parsing flow including user creation and error handling"""
@@ -157,6 +161,20 @@ class ParserService:
             user = await get_or_create_by_telegram_id(user_id)
             actual_user_id = str(user.id)
             
+            # Check daily article limit
+            today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+            today_end = today_start + timedelta(days=1)
+            daily_count = await user_articles.count_documents({
+                "user_id": ObjectId(actual_user_id),
+                "timestamps.saved_at": {"$gte": today_start, "$lt": today_end}
+            })
+            if daily_count >= ParserService.DAILY_ARTICLE_LIMIT:
+                logger.warning(f"User {user_id} exceeded daily article limit.")
+                raise HTTPException(
+                    status_code=429,
+                    detail=f"Daily article limit exceeded. You can parse up to {ParserService.DAILY_ARTICLE_LIMIT} articles per day."
+                )
+
             # Parse URL first
             content, title, description, article_metadata = ParserService.parse_url(url)
             
