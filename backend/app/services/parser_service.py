@@ -383,6 +383,11 @@ class ParserService:
         content = re.sub(r'\n(```|    )', '§PRESERVE_NEWLINE§\\1', content)
         # Headers
         content = re.sub(r'\n(#{1,6} )', '§PRESERVE_NEWLINE§\\1', content)
+        # Inline formatting (emphasis, bold, etc.)
+        content = re.sub(r'\n(\*[^\n]+?\*)', '§PRESERVE_NEWLINE§\\1', content)
+        content = re.sub(r'\n(\*\*[^\n]+?\*\*)', '§PRESERVE_NEWLINE§\\1', content)
+        # Links
+        content = re.sub(r'\n(\[[^\]]+\]\([^)]+\))', '§PRESERVE_NEWLINE§\\1', content)
         
         # Step 3: Replace remaining single newlines with double newlines
         content = content.replace('\n', '\n\n')
