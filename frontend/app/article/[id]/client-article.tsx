@@ -33,7 +33,7 @@ export function ClientArticle({ articleId }: ClientArticleProps) {
   const [mdxSource, setMdxSource] = useState<MDXRemoteSerializeResult | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
-  const { isDeepLink } = useDeepLink()
+useDeepLink()
 
   useEffect(() => {
     const fetchArticle = async () => {

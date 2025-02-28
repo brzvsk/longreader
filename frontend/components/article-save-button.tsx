@@ -7,10 +7,9 @@ import { useRouter } from "next/navigation"
 
 interface ArticleSaveButtonProps {
   article: ArticleContent
-  onSaved?: () => void
 }
 
-export function ArticleSaveButton({ article, onSaved }: ArticleSaveButtonProps) {
+export function ArticleSaveButton({ article }: ArticleSaveButtonProps) {
   const [isSaving, setIsSaving] = useState(false)
   const [shouldShow, setShouldShow] = useState(false)
   const router = useRouter()
