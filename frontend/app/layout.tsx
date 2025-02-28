@@ -26,7 +26,7 @@ export default function RootLayout({
           async={false}
         />
       </head>
-      <body className={`${inter.className} font-sans antialiased`}>
+      <body className={`${inter.className} font-sans antialiased overflow-x-hidden`}>
         <AuthProvider>
           <RequireAuth>
             <TelegramProvider>

@@ -40,3 +40,10 @@
     color: var(--tg-link-color);
   } */
 }
+
+/* Ensure sticky headers work properly */
+.sticky {
+  position: sticky;
+  z-index: 30;
+  background-color: var(--tg-bg-color);
+}

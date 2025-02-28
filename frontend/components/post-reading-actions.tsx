@@ -27,13 +27,56 @@ export function PostReadingActions({
   const [isArchived, setIsArchived] = useState(false)
   const updateTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const lastProgressRef = useRef(initialProgress)
+  const archiveButtonRef = useRef<HTMLButtonElement>(null)
 
-  // Auto-archive when actions become visible
-  useEffect(() => {
-    if (isVisible && !isArchived) {
-      handleArchive()
+  const handleArchive = useCallback(async () => {
+    try {
+      await archiveArticle(articleId)
+      setIsArchived(true)
+      showArchiveEmojis()
+    } catch (error) {
+      console.error('Failed to archive article:', error)
     }
-  }, [isVisible])
+  }, [articleId])
+
+  const showArchiveEmojis = useCallback(() => {
+    if (!archiveButtonRef.current) return
+    
+    const buttonRect = archiveButtonRef.current.getBoundingClientRect()
+    const centerX = buttonRect.left + buttonRect.width / 2
+    const centerY = buttonRect.top + buttonRect.height / 2
+    
+    // Create 5 archive emojis
+    for (let i = 0; i < 5; i++) {
+      const emoji = document.createElement('div')
+      emoji.textContent = '🗄️'
+      emoji.style.position = 'fixed'
+      emoji.style.zIndex = '100'
+      emoji.style.fontSize = '24px'
+      emoji.style.left = `${centerX}px`
+      emoji.style.top = `${centerY}px`
+      emoji.style.pointerEvents = 'none'
+      emoji.style.transition = 'all 1s ease-out'
+      document.body.appendChild(emoji)
+      
+      // Random direction for each emoji
+      const angle = Math.random() * Math.PI * 2
+      const distance = 50 + Math.random() * 100
+      const finalX = centerX + Math.cos(angle) * distance
+      const finalY = centerY + Math.sin(angle) * distance - 50 // Slight upward bias
+      
+      // Animate after a small delay to ensure the transition works
+      setTimeout(() => {
+        emoji.style.transform = `translate(${finalX - centerX}px, ${finalY - centerY}px) rotate(${Math.random() * 360}deg)`
+        emoji.style.opacity = '0'
+      }, 10)
+      
+      // Remove from DOM after animation completes
+      setTimeout(() => {
+        document.body.removeChild(emoji)
+      }, 1100)
+    }
+  }, [])
 
   // Initial scroll restoration
   useEffect(() => {
@@ -131,15 +174,6 @@ export function PostReadingActions({
     }
   }, [onProgressChange, updateProgress, hasShownConfetti, fireConfetti])
 
-  const handleArchive = async () => {
-    try {
-      await archiveArticle(articleId)
-      setIsArchived(true)
-    } catch (error) {
-      console.error('Failed to archive article:', error)
-    }
-  }
-
   const handleShare = async () => {
     try {
       await shareArticle(articleId)
@@ -162,7 +196,7 @@ export function PostReadingActions({
 
       {/* Action buttons */}
       <div className={cn(
-        "fixed bottom-1 left-0 right-0 bg-[var(--tg-bg-color)] border-t border-[var(--tg-hint-color)]/20 transition-transform duration-500 ease-in-out transform z-40 shadow-sm",
+        "fixed bottom-1 left-0 right-0 bg-[var(--tg-bg-color)] border-t border-gray-200 transition-transform duration-500 ease-in-out transform z-40 shadow-sm",
         isVisible ? "translate-y-0" : "translate-y-full"
       )}>
         <div className="container mx-auto px-4 py-4">
@@ -188,6 +222,7 @@ export function PostReadingActions({
               )}
               onClick={handleArchive}
               disabled={isArchived}
+              ref={archiveButtonRef}
             >
               {isArchived ? (
                 <>

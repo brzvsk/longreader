@@ -1,46 +1,103 @@
 'use client'
 
-import { ArrowLeft } from "lucide-react"
-import Link from "next/link"
-import { useEffect, useState } from "react"
-import { cn } from "@/lib/utils"
+import { ArticleMetadata } from "@/types/article"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { ArticleOptionsMenu } from "./article-options-menu"
 
 interface ArticleHeaderProps {
   title: string
   progress: number
+  metadata: ArticleMetadata
+  articleId: string
+  isArchived: boolean
+  onDelete?: () => void
+  onProgressUpdate?: (progress: number) => void
+  onArchive?: () => void
+  onUnarchive?: () => void
 }
 
-export function ArticleHeader({ title, progress }: ArticleHeaderProps) {
-  const [isVisible, setIsVisible] = useState(true)
-  const [lastScrollY, setLastScrollY] = useState(0)
+function getDomainFromUrl(url: string): string {
+  try {
+    const domain = new URL(url).hostname.replace('www.', '')
+    return domain
+  } catch {
+    return url
+  }
+}
 
-  // handles header visibility on scroll
-  useEffect(() => {
-    const handleScroll = () => {
-      const currentScrollY = window.scrollY
-      setIsVisible(currentScrollY < lastScrollY || currentScrollY < 100)
-      setLastScrollY(currentScrollY)
-    }
-
-    window.addEventListener('scroll', handleScroll, { passive: true })
-    return () => window.removeEventListener('scroll', handleScroll)
-  }, [lastScrollY])
+export function ArticleHeader({ 
+  title, 
+  progress, 
+  metadata, 
+  articleId,
+  isArchived,
+  onDelete,
+  onProgressUpdate,
+  onArchive,
+  onUnarchive
+}: ArticleHeaderProps) {
+  // Format publish date if available
+  const formattedDate = metadata.publish_date 
+    ? new Date(metadata.publish_date).toLocaleDateString('en-US', {
+        month: 'long',
+        day: 'numeric',
+        year: new Date(metadata.publish_date).getFullYear() !== new Date().getFullYear() ? 'numeric' : undefined
+      })
+    : null
+    
+  const sourceName = getDomainFromUrl(metadata.source_url)
 
   return (
     <>
-      <header className={cn(
-        "fixed top-0 left-0 right-0 bg-background/80 backdrop-blur-sm z-50 transition-transform duration-300",
-        !isVisible && "-translate-y-16"
-      )}>
-        <div className="container mx-auto px-4">
-          <div className="h-16 flex items-center gap-4">
-            <Link href="/" className="hover:opacity-70">
-              <ArrowLeft className="w-6 h-6" />
-            </Link>
-            <h1 className="font-medium truncate">{title}</h1>
+      {/* Article Info Header */}
+      <div className="container mx-auto px-4 pt-8 pb-8 relative">
+        <div className="max-w-prose mx-auto">
+          {/* Author */}
+          <div className="flex items-center gap-2 mb-3">
+            <Avatar className="h-6 w-6" style={{ backgroundColor: 'var(--tg-hint-color)', opacity: 0.2 }}>
+              <AvatarFallback style={{ color: 'var(--tg-text-color)' }}>
+                {sourceName.charAt(0).toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+            <span className="text-xs" style={{ color: 'var(--tg-hint-color)' }}>
+              {metadata.author ? `@${metadata.author}` : sourceName}
+            </span>
+          </div>
+          
+          {/* Title */}
+          <h1 className="text-2xl font-bold mb-3" style={{ color: 'var(--tg-text-color)' }}>{title}</h1>
+          
+          {/* Publish date and reading time */}
+          <div className="flex items-center gap-1 text-xs" style={{ color: 'var(--tg-hint-color)' }}>
+            {formattedDate && (
+              <>
+                <span>{formattedDate}</span>
+                <span>·</span>
+              </>
+            )}
+            <span>{metadata.reading_time} min read</span>
+            {progress > 0 && (
+              <>
+                <span>·</span>
+                <span>{progress}% complete</span>
+              </>
+            )}
           </div>
         </div>
-      </header>
+        
+        <ArticleOptionsMenu 
+          articleId={articleId}
+          sourceUrl={metadata.source_url}
+          progress={progress}
+          isArchived={isArchived}
+          onDelete={onDelete}
+          onProgressUpdate={onProgressUpdate}
+          onArchive={onArchive}
+          onUnarchive={onUnarchive}
+          variant="header"
+        />
+      </div>
+
       <div className="fixed bottom-0 left-0 right-0 z-50">
         <div className="h-1 bg-muted">
           <div 

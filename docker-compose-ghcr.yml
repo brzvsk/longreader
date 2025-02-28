@@ -7,7 +7,7 @@ services:
     env_file:
       - .env
     volumes:
-      - ./backend/logs:/app/logs
+      - ./logs/backend:/app/logs
     depends_on:
       - mongodb
     restart: unless-stopped
