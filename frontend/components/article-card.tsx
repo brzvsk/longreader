@@ -60,6 +60,7 @@ export function ArticleCard({ article, onArchive, onUnarchive, onProgressUpdate,
             <BookmarkIcon className="w-3.5 h-3.5" style={{ color: 'var(--tg-hint-color)' }} />
             <span className="text-xs" style={{ color: 'var(--tg-hint-color)' }}>
               {(() => {
+                if (!article.timestamps.saved_at) return '';
                 const date = new Date(article.timestamps.saved_at)
                 const isCurrentYear = date.getFullYear() === new Date().getFullYear()
                 return date.toLocaleDateString('en-US', {
