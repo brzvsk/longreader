@@ -7,7 +7,6 @@ import {
   Archive,
   Headphones,
   Trash2,
-  MoreHorizontal,
   MoreVertical,
   LucideIcon,
 } from "lucide-react"

@@ -28,12 +28,14 @@ export function PostReadingActions({
   const updateTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const lastProgressRef = useRef(initialProgress)
 
-  // Auto-archive when actions become visible
-  useEffect(() => {
-    if (isVisible && !isArchived) {
-      handleArchive()
+  const handleArchive = useCallback(async () => {
+    try {
+      await archiveArticle(articleId)
+      setIsArchived(true)
+    } catch (error) {
+      console.error('Failed to archive article:', error)
     }
-  }, [isVisible])
+  }, [articleId])
 
   // Initial scroll restoration
   useEffect(() => {
@@ -130,15 +132,6 @@ export function PostReadingActions({
       }
     }
   }, [onProgressChange, updateProgress, hasShownConfetti, fireConfetti])
-
-  const handleArchive = async () => {
-    try {
-      await archiveArticle(articleId)
-      setIsArchived(true)
-    } catch (error) {
-      console.error('Failed to archive article:', error)
-    }
-  }
 
   return (
     <>
