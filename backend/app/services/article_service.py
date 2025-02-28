@@ -230,13 +230,20 @@ async def create_share_message(article_id: str, telegram_user_id: int) -> str:
     logger = logging.getLogger(__name__)
     logger.info(f"Creating share message for article: {article_id} for Telegram user: {telegram_user_id}")
     
+    def escape_markdown_v2(text):
+        """Helper function to escape all special characters for MarkdownV2"""
+        special_chars = ['_', '*', '[', ']', '(', ')', '~', '`', '>', '#', '+', '-', '=', '|', '{', '}', '.', '!']
+        for char in special_chars:
+            text = text.replace(char, f'\\{char}')
+        return text
+    
     try:
         article = await get_article(article_id)
         logger.debug(f"Found article with title: {article.title}")
         
         # Escape special characters for MarkdownV2
-        header = article.title.replace('[', '\[').replace(']', '\]').replace('*', '\*').replace('_', '\_').replace('-', '\-').replace('#', '\#')
-        subheader = article.short_description.replace('[', '\[').replace(']', '\]').replace('*', '\*').replace('_', '\_').replace('-', '\-').replace('#', '\#').replace('.', '\.') if article.short_description else ""
+        header = escape_markdown_v2(article.title)
+        subheader = escape_markdown_v2(article.short_description) if article.short_description else ""
         
         # Create a deep link with startapp parameter
         bot_env = os.getenv('TELEGRAM_BOT_ENVIRONMENT', 'test')
@@ -244,7 +251,8 @@ async def create_share_message(article_id: str, telegram_user_id: int) -> str:
         app_name = os.getenv('TELEGRAM_APP_NAME', 'reader')
         deep_link = f"https://t.me/{bot_username}/{app_name}?startapp=article_{article_id}"
         
-        # Simplify the message format to avoid markdown issues
+        # Create the message with properly escaped components
+        # Note: The URL in markdown links should NOT have its characters escaped
         message_text = f"*{header}*\n\n{subheader}\n\n[Read full 📖]({deep_link})"
         logger.debug(f"Prepared message text: {message_text}")
         
