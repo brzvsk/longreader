@@ -56,11 +56,6 @@ export function ClientArticle({ articleId }: ClientArticleProps) {
     fetchArticle()
   }, [articleId])
 
-  const handleArticleSaved = () => {
-    // Reload the article to get the updated state
-    window.location.reload()
-  }
-
   if (loading) {
     return null // Parent component handles loading state
   }
@@ -71,10 +66,7 @@ export function ClientArticle({ articleId }: ClientArticleProps) {
 
   return (
     <div className="relative">
-      {/* Always show save button, it will handle its own visibility */}
-      <div className="sticky top-0 z-50 p-4 bg-[var(--tg-bg-color)] border-b border-[var(--tg-hint-color)]/20">
-        <ArticleSaveButton article={article} onSaved={handleArticleSaved} />
-      </div>
+      <ArticleSaveButton article={article} />
       <ArticleContent article={article}>
         <MDXRemote {...mdxSource} components={{ a: CustomLink }} />
       </ArticleContent>
