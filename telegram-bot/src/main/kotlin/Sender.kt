@@ -74,11 +74,11 @@ fun sendToParser(url: String, id: String, telegramClient: OkHttpTelegramClient) 
         } else {
             val responseBody = response.body?.string() ?: ""
             if (responseBody.contains("429")) {
-                sendText(id.toLong(), "Saving is failed :( Limit for today has been reached", telegramClient)
+                sendText(id.toLong(), "Saving failed :( Limit for today has been reached", telegramClient)
             } else {
                 sendText(
                     id.toLong(),
-                    "Saving is failed :( We're aware of this issue and working on it 💫",
+                    "Saving failed :( We're aware of this issue and working on it 💫",
                     telegramClient
                 )
             }
