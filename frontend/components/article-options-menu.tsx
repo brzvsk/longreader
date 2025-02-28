@@ -7,7 +7,7 @@ import {
   Archive,
   Headphones,
   Trash2,
-//  Check,
+  MoreHorizontal,
   MoreVertical,
   LucideIcon,
 } from "lucide-react"
@@ -20,17 +20,20 @@ import {
 import { Button } from "@/components/ui/button"
 import { copyToClipboard } from "@/utils/clipboard"
 import { updateArticleProgress, archiveArticle, unarchiveArticle } from "@/services/articles"
+import { useRouter } from "next/navigation"
 import React from "react"
 
-interface ArticleCardMenuProps {
+interface ArticleOptionsMenuProps {
   articleId: string
-  sourceUrl?: string
+  sourceUrl: string
   onDelete?: () => void
   onProgressUpdate?: (progress: number) => void
   onArchive?: () => void
   onUnarchive?: () => void
-  progress?: number
-  isArchived?: boolean
+  progress: number
+  isArchived: boolean
+  variant?: "card" | "header"
+  className?: string
 }
 
 interface MenuAction {
@@ -42,18 +45,20 @@ interface MenuAction {
   style?: React.CSSProperties
 }
 
-export function ArticleCardMenu({ 
+export function ArticleOptionsMenu({ 
   articleId, 
   sourceUrl, 
   onDelete,
   onProgressUpdate,
   onArchive,
   onUnarchive,
-  progress = 0,
-  isArchived = false
-}: ArticleCardMenuProps) {
+  progress,
+  isArchived,
+  variant = "header",
+  className
+}: ArticleOptionsMenuProps) {
   const [open, setOpen] = React.useState(false)
-//  const isCompleted = progress === 100
+  const router = useRouter()
 
   const handleClick = (e: React.MouseEvent) => {
     e.preventDefault()
@@ -105,6 +110,10 @@ export function ArticleCardMenu({
         } else {
           await archiveArticle(articleId)
           onArchive?.()
+          // Only navigate away if we're on the article page (header variant)
+          if (variant === "header") {
+            router.push('/')
+          }
         }
       },
     },
@@ -118,24 +127,36 @@ export function ArticleCardMenu({
             (isConfirmed) => {
               if (isConfirmed) {
                 onDelete?.()
+                // Only navigate away if we're on the article page (header variant)
+                if (variant === "header") {
+                  router.push('/')
+                }
               }
             }
           )
         } else {
           onDelete?.()
+          // Only navigate away if we're on the article page (header variant)
+          if (variant === "header") {
+            router.push('/')
+          }
         }
       },
       style: { color: 'var(--tg-destructive)' }
     },
   ]
 
+  const IconComponent = MoreVertical
+  const buttonClassName = variant === "card" ? "h-8 w-8" : "h-8 w-8 absolute right-4 top-8"
+  const iconSize = variant === "card" ? "h-4 w-4" : "h-5 w-5"
+
   return (
-    <div onClick={handleClick}>
+    <div onClick={handleClick} className={className}>
       <DropdownMenu open={open} onOpenChange={setOpen}>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon" className="h-8 w-8">
-            <MoreVertical className="h-4 w-4" style={{ color: 'var(--tg-hint-color)' }} />
-            <span className="sr-only">Open menu</span>
+          <Button variant="ghost" size="icon" className={buttonClassName}>
+            <IconComponent className={iconSize} style={{ color: 'var(--tg-hint-color)' }} />
+            <span className="sr-only">Options</span>
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent 

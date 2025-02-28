@@ -5,7 +5,7 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { ArticleCardMenu } from "./article-card-menu"
+import { ArticleOptionsMenu } from "./article-options-menu"
 import { useState } from "react"
 import { cn } from "@/lib/utils"
 
@@ -70,7 +70,7 @@ export function ArticleCard({ article, onArchive, onUnarchive, onProgressUpdate,
               })()}
             </span>
           </div>
-          <ArticleCardMenu 
+          <ArticleOptionsMenu 
             articleId={article._id} 
             sourceUrl={article.metadata.source_url}
             onProgressUpdate={handleProgressUpdate}
@@ -79,6 +79,7 @@ export function ArticleCard({ article, onArchive, onUnarchive, onProgressUpdate,
             onDelete={onDelete}
             progress={progress}
             isArchived={isArchived}
+            variant="card"
           />
         </div>
       </div>
