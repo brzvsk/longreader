@@ -274,6 +274,9 @@ async def create_share_message(article_id: str, telegram_user_id: int) -> str:
             request_data = {
                 "user_id": telegram_user_id,
                 "allow_user_chats": True,
+                "allow_group_chats": True,
+                "allow_channel_chats": True,
+                "allow_bot_chats": True,
                 "result": {
                     "type": "article",
                     "id": "1",  # Placeholder, not used for prepared messages
