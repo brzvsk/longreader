@@ -63,7 +63,7 @@ export function ArticleContent({ article, children }: ArticleContentProps) {
         onArchive={handleArchive}
         onUnarchive={handleUnarchive}
       />
-      <main className="container mx-auto px-4 pb-16">
+      <main className="container mx-auto px-4 pb-28">
         <article className="prose dark:prose-invert mx-auto">
           {children}
         </article>

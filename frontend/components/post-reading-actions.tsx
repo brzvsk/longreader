@@ -188,7 +188,7 @@ export function PostReadingActions({
 
       {/* Action buttons */}
       <div className={cn(
-        "fixed bottom-1 left-0 right-0 bg-[var(--tg-bg-color)] border-t border-[var(--tg-hint-color)]/20 transition-transform duration-500 ease-in-out transform z-40 shadow-sm",
+        "fixed bottom-1 left-0 right-0 bg-[var(--tg-bg-color)] border-t border-gray-200 transition-transform duration-500 ease-in-out transform z-40 shadow-sm",
         isVisible ? "translate-y-0" : "translate-y-full"
       )}>
         <div className="container mx-auto px-4 py-4">
