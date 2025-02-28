@@ -9,6 +9,8 @@ from bson import ObjectId
 import logging
 from fastapi import HTTPException
 import random
+import json
+import pathlib
 
 from ..models.article import Article, ArticleMetadata
 from ..database import articles, user_articles
@@ -24,6 +26,12 @@ class ParserService:
         "Mozilla/5.0 (Linux; Android 14; Samsung SM-S918B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Mobile Safari/537.36",
         "Mozilla/5.0 (iPhone; CPU iPhone OS 17_3_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/122.0.6261.89 Mobile/15E148 Safari/604.1"
     ]
+    
+    # Environment check
+    IS_DEV_ENVIRONMENT = os.getenv("TELEGRAM_BOT_ENVIRONMENT", "prod").lower() == "test"
+    
+    # Local storage paths
+    LOCAL_STORAGE_DIR = pathlib.Path("./app/data/parsed_articles")
     
     @staticmethod
     def _get_random_user_agent() -> str:
@@ -185,6 +193,95 @@ class ParserService:
             )
 
     @staticmethod
+    def _create_base_filename(article: Article, article_id: str) -> tuple[pathlib.Path, str]:
+        """Create storage directory and base filename for local files
+        
+        Args:
+            article: The parsed Article object
+            article_id: The ID of the article in the database
+            
+        Returns:
+            Tuple of (storage_dir, base_filename)
+        """
+        # Create directory if it doesn't exist
+        storage_dir = ParserService.LOCAL_STORAGE_DIR
+        storage_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Create a safe filename from the title
+        safe_title = "".join(c if c.isalnum() else "_" for c in article.title)
+        safe_title = safe_title[:50]  # Limit length
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        base_filename = f"{safe_title}_{timestamp}_{article_id[:8]}"
+        
+        return storage_dir, base_filename
+
+    @staticmethod
+    def _save_html_file(html_content: str, article: Article, article_id: str) -> None:
+        """Save original HTML content to a local file
+        
+        Args:
+            html_content: The original HTML content
+            article: The parsed Article object
+            article_id: The ID of the article in the database
+        """
+        if not ParserService.IS_DEV_ENVIRONMENT:
+            return
+            
+        try:
+            storage_dir, base_filename = ParserService._create_base_filename(article, article_id)
+            
+            # Save HTML file
+            html_path = storage_dir / f"{base_filename}.html"
+            with open(html_path, "w", encoding="utf-8") as f:
+                f.write(html_content)
+                
+            logger.info(f"Saved HTML file for article {article_id}: {html_path}")
+            
+        except Exception as e:
+            # Log error but don't fail the parsing process
+            logger.error(f"Failed to save HTML file for article {article_id}: {str(e)}", exc_info=True)
+
+    @staticmethod
+    def _save_markdown_file(article: Article, article_id: str) -> None:
+        """Save article content as Markdown file with metadata
+        
+        Args:
+            article: The parsed Article object
+            article_id: The ID of the article in the database
+        """
+        if not ParserService.IS_DEV_ENVIRONMENT:
+            return
+            
+        try:
+            storage_dir, base_filename = ParserService._create_base_filename(article, article_id)
+            
+            # Save MD file with metadata
+            md_path = storage_dir / f"{base_filename}.md"
+            with open(md_path, "w", encoding="utf-8") as f:
+                # Write metadata as YAML-like front matter
+                f.write("---\n")
+                f.write(f"title: {article.title}\n")
+                f.write(f"source_url: {article.metadata.source_url}\n")
+                if article.metadata.author:
+                    f.write(f"author: {article.metadata.author}\n")
+                if article.metadata.publish_date:
+                    f.write(f"publish_date: {article.metadata.publish_date.isoformat()}\n")
+                f.write(f"reading_time: {article.metadata.reading_time} min\n")
+                f.write(f"word_count: {len(article.content.split())}\n")
+                f.write(f"parsed_at: {datetime.now().isoformat()}\n")
+                f.write(f"article_id: {article_id}\n")
+                f.write("---\n\n")
+                
+                # Write content
+                f.write(article.content)
+                
+            logger.info(f"Saved Markdown file for article {article_id}: {md_path}")
+            
+        except Exception as e:
+            # Log error but don't fail the parsing process
+            logger.error(f"Failed to save Markdown file for article {article_id}: {str(e)}", exc_info=True)
+
+    @staticmethod
     def parse_url(url: str) -> Article:
         """Parse URL and return an Article object
         
@@ -243,7 +340,7 @@ class ParserService:
                 metadata=article_metadata
             )
             
-            return article
+            return article, html_content
             
         except HTTPException:
             # Re-raise HTTP exceptions as is
@@ -282,10 +379,16 @@ class ParserService:
                 )
 
             # Parse URL first
-            article = ParserService.parse_url(url)
+            article, html_content = ParserService.parse_url(url)
             
             # Save article to database
             result_article = await articles.insert_one(article.model_dump(by_alias=True, exclude={"id"}))
+            article_id = str(result_article.inserted_id)
+            
+            # Save local files if in development environment
+            if ParserService.IS_DEV_ENVIRONMENT:
+                ParserService._save_html_file(html_content, article, article_id)
+                ParserService._save_markdown_file(article, article_id)
             
             # Create user article link
             user_article_data = {
@@ -298,7 +401,7 @@ class ParserService:
             result_user_article = await user_articles.insert_one(user_article_data)
             
             response_data = {
-                "article_id": str(result_article.inserted_id),
+                "article_id": article_id,
                 "user_article_id": str(result_user_article.inserted_id),
                 "url": url
             }
