@@ -327,6 +327,9 @@ class ParserService:
                     detail="Could not extract content from this website. The page structure may not be supported or may require JavaScript to load content."
                 )
             
+            # Post-process content to ensure paragraphs have double newlines
+            content = ParserService._ensure_paragraph_separation(content)
+            
             logger.info(f"Successfully extracted content (length: {len(content)} chars)")
             
             # Extract metadata
@@ -351,6 +354,49 @@ class ParserService:
                 status_code=400,
                 detail=str(e)
             )
+
+    @staticmethod
+    def _ensure_paragraph_separation(content: str) -> str:
+        """Ensure paragraphs are properly separated with double newlines.
+        
+        Args:
+            content: The markdown content extracted from the article
+            
+        Returns:
+            Processed content with proper paragraph separation
+        """
+        import re
+        
+        # First, normalize all newlines to \n
+        content = content.replace('\r\n', '\n').replace('\r', '\n')
+        
+        # Replace single newlines with double newlines, but preserve existing double newlines
+        # and don't affect list items, code blocks, or other markdown formatting
+        
+        # Step 1: Temporarily mark existing double newlines
+        content = content.replace('\n\n', '§DOUBLE_NEWLINE§')
+        
+        # Step 2: Mark newlines that should be preserved as is (lists, code blocks, etc.)
+        # Lists
+        content = re.sub(r'\n([\*\-\+\d]+\. )', '§PRESERVE_NEWLINE§\\1', content)
+        # Code blocks
+        content = re.sub(r'\n(```|    )', '§PRESERVE_NEWLINE§\\1', content)
+        # Headers
+        content = re.sub(r'\n(#{1,6} )', '§PRESERVE_NEWLINE§\\1', content)
+        
+        # Step 3: Replace remaining single newlines with double newlines
+        content = content.replace('\n', '\n\n')
+        
+        # Step 4: Restore preserved newlines
+        content = content.replace('§PRESERVE_NEWLINE§', '\n')
+        
+        # Step 5: Restore original double newlines
+        content = content.replace('§DOUBLE_NEWLINE§', '\n\n')
+        
+        # Step 6: Clean up any excessive newlines (more than 2)
+        content = re.sub(r'\n{3,}', '\n\n', content)
+        
+        return content
 
     # Configurable daily article limit
     DAILY_ARTICLE_LIMIT = int(os.getenv("DAILY_ARTICLE_LIMIT", 10))
