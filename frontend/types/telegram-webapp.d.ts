@@ -48,6 +48,7 @@ interface WebApp {
     close(): void;
     showConfirm(message: string, callback?: (isConfirmed: boolean) => void): void;
     showAlert(message: string): Promise<void>;
+    shareMessage(messageId: string, callback: (success: boolean) => void): void;
 }
 
 interface Window {

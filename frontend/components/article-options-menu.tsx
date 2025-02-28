@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button"
 import { copyToClipboard } from "@/utils/clipboard"
-import { updateArticleProgress, archiveArticle, unarchiveArticle } from "@/services/articles"
+import { updateArticleProgress, archiveArticle, unarchiveArticle, shareArticle } from "@/services/articles"
 import { useRouter } from "next/navigation"
 import React from "react"
 
@@ -75,7 +75,13 @@ export function ArticleOptionsMenu({
     {
       icon: Send,
       label: "Share...",
-      onClick: () => {},
+      onClick: async () => {
+        try {
+          await shareArticle(articleId)
+        } catch (error) {
+          console.error('Failed to share article:', error)
+        }
+      },
     },
     {
       icon: Link2,
