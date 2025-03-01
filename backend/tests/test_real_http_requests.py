@@ -54,7 +54,7 @@ def test_fetch_real_html(url):
     
     try:
         # Call the parser service directly
-        article = ParserService.parse_url(url)
+        article, html_content = ParserService.parse_url(url)
         
         # Basic assertions
         assert article.content is not None, f"Failed to extract content from {url}"
