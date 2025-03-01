@@ -49,7 +49,7 @@ export function PostReadingActions({
     // Create 5 archive emojis
     for (let i = 0; i < 5; i++) {
       const emoji = document.createElement('div')
-      emoji.textContent = '🗄️'
+      emoji.textContent = '📦'
       emoji.style.position = 'fixed'
       emoji.style.zIndex = '100'
       emoji.style.fontSize = '24px'
