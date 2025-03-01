@@ -48,6 +48,10 @@ interface WebApp {
     close(): void;
     showConfirm(message: string, callback?: (isConfirmed: boolean) => void): void;
     showAlert(message: string): Promise<void>;
+    hapticFeedback: {
+        impactOccurred(style: 'light' | 'medium' | 'heavy' | 'rigid' | 'soft'): void;
+        notificationOccurred(type: 'error' | 'warning' | 'success'): void;
+    };
     shareMessage(messageId: string, callback: (success: boolean) => void): void;
 }
 

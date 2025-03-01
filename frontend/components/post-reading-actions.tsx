@@ -1,6 +1,6 @@
 'use client'
 
-import { Share, Archive, Check } from "lucide-react"
+import { Share, Archive, Check, Loader } from "lucide-react"
 import { Button } from "./ui/button"
 import { cn } from "@/lib/utils"
 import { useEffect, useState, useCallback, useRef } from 'react'
@@ -25,6 +25,7 @@ export function PostReadingActions({
   const [progress, setProgress] = useState(initialProgress)
   const [isVisible, setIsVisible] = useState(initialIsVisible)
   const [isArchived, setIsArchived] = useState(false)
+  const [isArchiving, setIsArchiving] = useState(false)
   const updateTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const lastProgressRef = useRef(initialProgress)
   const archiveButtonRef = useRef<HTMLButtonElement>(null)
@@ -68,15 +69,41 @@ export function PostReadingActions({
     }
   }, [])
 
+  // Helper function to safely trigger haptic feedback
+  const triggerHapticFeedback = useCallback((type: 'success' | 'error') => {
+    // Check if Telegram WebApp is available
+    const tg = window.Telegram?.WebApp
+    
+    if (tg?.hapticFeedback) {
+      if (type === 'success') {
+        tg.hapticFeedback.notificationOccurred('success')
+        tg.hapticFeedback.impactOccurred('medium')
+      } else if (type === 'error') {
+        tg.hapticFeedback.notificationOccurred('error')
+      }
+    }
+  }, [])
+
   const handleArchive = useCallback(async () => {
+    if (isArchiving || isArchived) return
+    
+    setIsArchiving(true)
     try {
       await archiveArticle(articleId)
       setIsArchived(true)
       showArchiveEmojis()
+      
+      // Trigger success haptic feedback
+      triggerHapticFeedback('success')
     } catch (error) {
       console.error('Failed to archive article:', error)
+      
+      // Trigger error haptic feedback
+      triggerHapticFeedback('error')
+    } finally {
+      setIsArchiving(false)
     }
-  }, [articleId, showArchiveEmojis])
+  }, [articleId, showArchiveEmojis, isArchiving, isArchived, triggerHapticFeedback])
 
   // Initial scroll restoration
   useEffect(() => {
@@ -221,13 +248,18 @@ export function PostReadingActions({
                 isArchived ? "bg-[var(--tg-hint-color)]/10" : "hover:bg-[var(--tg-hint-color)]/10"
               )}
               onClick={handleArchive}
-              disabled={isArchived}
+              disabled={isArchived || isArchiving}
               ref={archiveButtonRef}
             >
               {isArchived ? (
                 <>
                   <Check className="w-4 h-4" />
                   Archived
+                </>
+              ) : isArchiving ? (
+                <>
+                  <Loader className="w-4 h-4 animate-spin" />
+                  Archiving...
                 </>
               ) : (
                 <>
