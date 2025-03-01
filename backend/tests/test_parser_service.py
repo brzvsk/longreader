@@ -31,13 +31,47 @@ class TestParserService:
             # Replace with our mock
             trafilatura.metadata.extract_metadata = mock_extract_metadata
             
-            # Test extraction
-            title = ParserService._extract_title(None)  # None is fine since we're mocking
+            # Test 1: Extraction with raw HTML containing Open Graph title
+            html_content = """
+            <html>
+            <head>
+                <meta property="og:title" content="Open Graph Title">
+                <title>HTML Title</title>
+            </head>
+            <body>Content</body>
+            </html>
+            """
+            title = ParserService._extract_title(None, html_content)
+            assert title == "Open Graph Title"
+            
+            # Test 2: Extraction with downloaded tree containing Open Graph title
+            html_content = """
+            <html>
+            <head>
+                <meta property="og:title" content="Open Graph Title from Tree">
+                <title>HTML Title</title>
+            </head>
+            <body>Content</body>
+            </html>
+            """
+            title = ParserService._extract_title(html_content)
+            assert title == "Open Graph Title from Tree"
+            
+            # Test 3: Extraction with no Open Graph title, falling back to trafilatura
+            html_content = """
+            <html>
+            <head>
+                <title>HTML Title</title>
+            </head>
+            <body>Content</body>
+            </html>
+            """
+            title = ParserService._extract_title(html_content)
             assert title == "Test Article Title"
             
-            # Test with no title
+            # Test 4: With no title at all
             mock_metadata.title = None
-            title = ParserService._extract_title(None)
+            title = ParserService._extract_title(html_content)
             assert title == "Untitled Article"
             
         finally:
@@ -196,4 +230,85 @@ class TestParserService:
         title = "Test Article Title"
         description = "Test  Article, Title - This is the article description."
         result = ParserService._remove_duplicate_title(description, title, is_content=False)
-        assert result == "This is the article description." 
+        assert result == "This is the article description."
+    
+    def test_parse_url_with_og_title(self):
+        """Test that parse_url correctly extracts Open Graph title"""
+        # Mock the _fetch_html_content method
+        original_fetch_html_content = ParserService._fetch_html_content
+        original_extract_title = ParserService._extract_title
+        
+        # Mock trafilatura functions
+        original_load_html = trafilatura.load_html
+        original_extract = trafilatura.extract
+        original_extract_metadata = trafilatura.metadata.extract_metadata
+        
+        # Create mock objects
+        mock_downloaded = MagicMock()
+        mock_metadata = MagicMock()
+        mock_metadata.title = "Trafilatura Title"
+        mock_metadata.description = "Test description"
+        mock_metadata.author = "Test Author"
+        mock_metadata.date = "2023-01-01"
+        
+        try:
+            # Mock the fetch_html_content method to return HTML with Open Graph title
+            html_with_og_title = """
+            <html>
+            <head>
+                <meta property="og:title" content="Open Graph Title">
+                <title>HTML Title</title>
+            </head>
+            <body>
+                <article>
+                    <h1>Article Title</h1>
+                    <p>This is the article content.</p>
+                </article>
+            </body>
+            </html>
+            """
+            ParserService._fetch_html_content = lambda url: html_with_og_title
+            
+            # Mock trafilatura functions
+            trafilatura.load_html = lambda html: mock_downloaded
+            trafilatura.extract = lambda *args, **kwargs: "This is the article content."
+            trafilatura.metadata.extract_metadata = lambda downloaded: mock_metadata
+            
+            # Test parsing with Open Graph title
+            article, _ = ParserService.parse_url("https://example.com")
+            
+            # Verify the title is from Open Graph
+            assert article.title == "Open Graph Title"
+            
+            # Test with no Open Graph title
+            html_without_og_title = """
+            <html>
+            <head>
+                <title>HTML Title</title>
+            </head>
+            <body>
+                <article>
+                    <h1>Article Title</h1>
+                    <p>This is the article content.</p>
+                </article>
+            </body>
+            </html>
+            """
+            ParserService._fetch_html_content = lambda url: html_without_og_title
+            
+            # Mock _extract_title to return a specific title
+            ParserService._extract_title = lambda downloaded, html_content=None: "Trafilatura Title"
+            
+            # Test parsing with fallback title
+            article, _ = ParserService.parse_url("https://example.com")
+            
+            # Verify the title is from trafilatura
+            assert article.title == "Trafilatura Title"
+            
+        finally:
+            # Restore original methods
+            ParserService._fetch_html_content = original_fetch_html_content
+            ParserService._extract_title = original_extract_title
+            trafilatura.load_html = original_load_html
+            trafilatura.extract = original_extract
+            trafilatura.metadata.extract_metadata = original_extract_metadata 

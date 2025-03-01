@@ -59,11 +59,55 @@ class ParserService:
             return None
 
     @staticmethod
-    def _extract_title(downloaded) -> str:
-        """Extract article title from downloaded content"""
+    def _extract_title(downloaded, html_content: str = None) -> str:
+        """Extract article title from downloaded content
+        
+        Args:
+            downloaded: The downloaded HTML content parsed by trafilatura
+            html_content: Optional raw HTML string for direct extraction of Open Graph metadata
+            
+        Returns:
+            The extracted title
+        """
+        # First try to extract Open Graph title from raw HTML if provided
+        if html_content:
+            try:
+                import re
+                og_title_match = re.search(r'<meta\s+property=["\']og:title["\']\s+content=["\'](.*?)["\']', html_content, re.IGNORECASE)
+                if og_title_match:
+                    og_title = og_title_match.group(1)
+                    logger.info(f"Using Open Graph title: {og_title}")
+                    return og_title
+            except Exception as e:
+                logger.warning(f"Failed to extract og:title from HTML: {str(e)}")
+        
+        # Then try to extract Open Graph title from downloaded tree
+        try:
+            # If downloaded is a string, parse it
+            if isinstance(downloaded, str):
+                from lxml import html
+                tree = html.fromstring(downloaded)
+                logger.debug(f"Downloaded is a string, parsed to HTML tree")
+            else:
+                tree = downloaded
+                logger.debug(f"Downloaded is already a tree object")
+                
+            # Look for og:title meta tag
+            og_title_elements = tree.xpath('//meta[@property="og:title"]/@content')
+            logger.debug(f"OG title elements: {og_title_elements}")
+            
+            if og_title_elements and og_title_elements[0]:
+                logger.info(f"Using Open Graph title: {og_title_elements[0]}")
+                return og_title_elements[0]
+        except Exception as e:
+            logger.warning(f"Failed to extract og:title from tree: {str(e)}")
+        
+        # Fall back to trafilatura's metadata extraction
+        logger.debug("Falling back to trafilatura metadata extraction")
         metadata = trafilatura.metadata.extract_metadata(downloaded)
         # Get title
         title = (metadata.title if metadata else None) or "Untitled Article"
+        logger.info(f"Using trafilatura title: {title}")
         return title
         
     @staticmethod
@@ -530,8 +574,8 @@ class ParserService:
             
             logger.info(f"Successfully extracted content (length: {len(content)} chars)")
             
-            # First extract the title
-            title = ParserService._extract_title(downloaded)
+            # First extract the title, using Open Graph title if available
+            title = ParserService._extract_title(downloaded, html_content)
             
             # Remove duplicate H1 heading if it matches the title
             content = ParserService._remove_duplicate_title(content, title, is_content=True)
