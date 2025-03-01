@@ -33,6 +33,9 @@ class ParserService:
     # Local storage paths
     LOCAL_STORAGE_DIR = pathlib.Path("./app/data/parsed_articles")
     
+    # Configurable daily article limit
+    DAILY_ARTICLE_LIMIT = int(os.getenv("DAILY_ARTICLE_LIMIT", 10))
+
     @staticmethod
     def _get_random_user_agent() -> str:
         """Return a random modern user agent string"""
@@ -56,12 +59,29 @@ class ParserService:
             return None
 
     @staticmethod
-    def _extract_metadata(downloaded, content: str, source_url: str) -> tuple[str, str, ArticleMetadata]:
-        """Extract and process article metadata"""
+    def _extract_title(downloaded) -> str:
+        """Extract article title from downloaded content"""
+        metadata = trafilatura.metadata.extract_metadata(downloaded)
+        # Get title
+        title = (metadata.title if metadata else None) or "Untitled Article"
+        return title
+        
+    @staticmethod
+    def _extract_metadata(downloaded, content: str, title: str, source_url: str) -> tuple[str, ArticleMetadata]:
+        """Extract and process article metadata
+        
+        Args:
+            downloaded: The downloaded HTML content
+            content: The extracted markdown content
+            title: The already extracted title
+            source_url: The source URL
+            
+        Returns:
+            Tuple of (description, ArticleMetadata)
+        """
         metadata = trafilatura.metadata.extract_metadata(downloaded)
         
-        # Get title and description
-        title = (metadata.title if metadata else None) or "Untitled Article"
+        # Get description
         description = (
             metadata.description 
             if metadata and metadata.description 
@@ -80,7 +100,89 @@ class ParserService:
             reading_time=reading_time
         )
         
-        return title, description, article_metadata
+        return description, article_metadata
+
+    @staticmethod
+    def _remove_duplicate_title(text: str, title: str, is_content: bool = True) -> str:
+        """Remove duplicate title or H1 heading from text if it matches the title.
+        
+        This method handles both article content and description text.
+        
+        Args:
+            text: The text to process (either content or description)
+            title: The article title to check against
+            is_content: Whether the text is article content (True) or description (False)
+            
+        Returns:
+            Processed text with duplicate title/heading removed if present
+        """
+        import re
+        import string
+        
+        # Normalize the title for comparison
+        def normalize_text(t):
+            # Convert to lowercase and remove punctuation
+            t = t.lower()
+            t = ''.join(c for c in t if c not in string.punctuation)
+            # Remove extra whitespace
+            t = ' '.join(t.split())
+            return t
+        
+        normalized_title = normalize_text(title)
+        normalized_text = normalize_text(text)
+        
+        logger.debug(f"Original {'content' if is_content else 'description'}: '{text[:100]}...'")
+        logger.debug(f"Title: '{title}'")
+        
+        # First check if text starts with an H1 heading that matches the title
+        h1_pattern = r'^# (.+?)(?:\n\n|\n|\r\n|\r|$)'
+        match = re.match(h1_pattern, text)
+        if match:
+            h1_text = match.group(1)
+            normalized_h1 = normalize_text(h1_text)
+            
+            logger.debug(f"Found H1 heading: '{h1_text}'")
+            logger.debug(f"Normalized H1: '{normalized_h1}'")
+            logger.debug(f"Normalized title: '{normalized_title}'")
+            
+            # If the normalized H1 matches the normalized title, remove it
+            if normalized_h1 == normalized_title:
+                text = text[match.end():].lstrip()
+                logger.info(f"Removed H1 heading from {'content' if is_content else 'description'}")
+                logger.debug(f"After H1 removal: '{text[:100]}...'")
+                return text
+        
+        # For descriptions only, also check if it starts with the title text
+        if not is_content:
+            # Check if description starts with the title (case-insensitive)
+            if text.startswith(title) or normalized_text.startswith(normalized_title):
+                # For exact match, remove the exact title
+                if text.startswith(title):
+                    text = text[len(title):].lstrip()
+                # For normalized match, find where the normalized title ends in the normalized text
+                else:
+                    # Find the length of the title in the original text
+                    title_end_pos = len(normalized_title)
+                    # Find the corresponding position in the original text
+                    char_count = 0
+                    pos = 0
+                    for i, char in enumerate(text):
+                        if char_count >= title_end_pos:
+                            pos = i
+                            break
+                        # Only count characters that would be in the normalized text
+                        if char.lower() not in string.punctuation and not (char.isspace() and char_count > 0 and text[i-1].isspace()):
+                            char_count += 1
+                    
+                    text = text[pos:].lstrip()
+                
+                # If description starts with common separators, remove them
+                text = re.sub(r'^[:\-–—\s]+', '', text)
+                logger.info(f"Removed title from beginning of description")
+                logger.debug(f"After title removal: '{text[:100]}...'")
+        
+        return text
+
 
     @staticmethod
     def _fetch_html_content(url: str) -> str:
@@ -282,6 +384,54 @@ class ParserService:
             logger.error(f"Failed to save Markdown file for article {article_id}: {str(e)}", exc_info=True)
 
     @staticmethod
+    def _ensure_paragraph_separation(content: str) -> str:
+        """Ensure paragraphs are properly separated with double newlines.
+        
+        Args:
+            content: The markdown content extracted from the article
+            
+        Returns:
+            Processed content with proper paragraph separation
+        """
+        import re
+        
+        # First, normalize all newlines to \n
+        content = content.replace('\r\n', '\n').replace('\r', '\n')
+        
+        # Replace single newlines with double newlines, but preserve existing double newlines
+        # and don't affect list items, code blocks, or other markdown formatting
+        
+        # Step 1: Temporarily mark existing double newlines
+        content = content.replace('\n\n', '§DOUBLE_NEWLINE§')
+        
+        # Step 2: Mark newlines that should be preserved as is (lists, code blocks, etc.)
+        # Lists
+        content = re.sub(r'\n([\*\-\+\d]+\. )', '§PRESERVE_NEWLINE§\\1', content)
+        # Code blocks
+        content = re.sub(r'\n(```|    )', '§PRESERVE_NEWLINE§\\1', content)
+        # Headers
+        content = re.sub(r'\n(#{1,6} )', '§PRESERVE_NEWLINE§\\1', content)
+        # Inline formatting (emphasis, bold, etc.)
+        content = re.sub(r'\n(\*[^\n]+?\*)', '§PRESERVE_NEWLINE§\\1', content)
+        content = re.sub(r'\n(\*\*[^\n]+?\*\*)', '§PRESERVE_NEWLINE§\\1', content)
+        # Links
+        content = re.sub(r'\n(\[[^\]]+\]\([^)]+\))', '§PRESERVE_NEWLINE§\\1', content)
+        
+        # Step 3: Replace remaining single newlines with double newlines
+        content = content.replace('\n', '\n\n')
+        
+        # Step 4: Restore preserved newlines
+        content = content.replace('§PRESERVE_NEWLINE§', '\n')
+        
+        # Step 5: Restore original double newlines
+        content = content.replace('§DOUBLE_NEWLINE§', '\n\n')
+        
+        # Step 6: Clean up any excessive newlines (more than 2)
+        content = re.sub(r'\n{3,}', '\n\n', content)
+        
+        return content
+
+    @staticmethod
     def parse_url(url: str) -> Article:
         """Parse URL and return an Article object
         
@@ -332,8 +482,14 @@ class ParserService:
             
             logger.info(f"Successfully extracted content (length: {len(content)} chars)")
             
-            # Extract metadata
-            title, description, article_metadata = ParserService._extract_metadata(downloaded, content, url)
+            # First extract the title
+            title = ParserService._extract_title(downloaded)
+            
+            # Remove duplicate H1 heading if it matches the title
+            content = ParserService._remove_duplicate_title(content, title, is_content=True)
+            
+            # Then extract description and other metadata
+            description, article_metadata = ParserService._extract_metadata(downloaded, content, title, url)
             
             # Create and return Article object
             article = Article(
@@ -355,56 +511,6 @@ class ParserService:
                 detail=str(e)
             )
 
-    @staticmethod
-    def _ensure_paragraph_separation(content: str) -> str:
-        """Ensure paragraphs are properly separated with double newlines.
-        
-        Args:
-            content: The markdown content extracted from the article
-            
-        Returns:
-            Processed content with proper paragraph separation
-        """
-        import re
-        
-        # First, normalize all newlines to \n
-        content = content.replace('\r\n', '\n').replace('\r', '\n')
-        
-        # Replace single newlines with double newlines, but preserve existing double newlines
-        # and don't affect list items, code blocks, or other markdown formatting
-        
-        # Step 1: Temporarily mark existing double newlines
-        content = content.replace('\n\n', '§DOUBLE_NEWLINE§')
-        
-        # Step 2: Mark newlines that should be preserved as is (lists, code blocks, etc.)
-        # Lists
-        content = re.sub(r'\n([\*\-\+\d]+\. )', '§PRESERVE_NEWLINE§\\1', content)
-        # Code blocks
-        content = re.sub(r'\n(```|    )', '§PRESERVE_NEWLINE§\\1', content)
-        # Headers
-        content = re.sub(r'\n(#{1,6} )', '§PRESERVE_NEWLINE§\\1', content)
-        # Inline formatting (emphasis, bold, etc.)
-        content = re.sub(r'\n(\*[^\n]+?\*)', '§PRESERVE_NEWLINE§\\1', content)
-        content = re.sub(r'\n(\*\*[^\n]+?\*\*)', '§PRESERVE_NEWLINE§\\1', content)
-        # Links
-        content = re.sub(r'\n(\[[^\]]+\]\([^)]+\))', '§PRESERVE_NEWLINE§\\1', content)
-        
-        # Step 3: Replace remaining single newlines with double newlines
-        content = content.replace('\n', '\n\n')
-        
-        # Step 4: Restore preserved newlines
-        content = content.replace('§PRESERVE_NEWLINE§', '\n')
-        
-        # Step 5: Restore original double newlines
-        content = content.replace('§DOUBLE_NEWLINE§', '\n\n')
-        
-        # Step 6: Clean up any excessive newlines (more than 2)
-        content = re.sub(r'\n{3,}', '\n\n', content)
-        
-        return content
-
-    # Configurable daily article limit
-    DAILY_ARTICLE_LIMIT = int(os.getenv("DAILY_ARTICLE_LIMIT", 10))
 
     @staticmethod
     async def handle_parse_request(url: str, user_id: str) -> dict:
