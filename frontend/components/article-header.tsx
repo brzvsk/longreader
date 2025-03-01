@@ -3,6 +3,7 @@
 import { ArticleMetadata } from "@/types/article"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { ArticleOptionsMenu } from "./article-options-menu"
+import { formatRelativeTime } from "@/utils/date-format"
 
 interface ArticleHeaderProps {
   title: string
@@ -37,14 +38,7 @@ export function ArticleHeader({
   onUnarchive
 }: ArticleHeaderProps) {
   // Format publish date if available
-  const formattedDate = metadata.publish_date 
-    ? new Date(metadata.publish_date).toLocaleDateString('en-US', {
-        month: 'long',
-        day: 'numeric',
-        year: new Date(metadata.publish_date).getFullYear() !== new Date().getFullYear() ? 'numeric' : undefined
-      })
-    : null
-    
+  const formattedDate = formatRelativeTime(metadata.publish_date || null)
   const sourceName = getDomainFromUrl(metadata.source_url)
 
   return (

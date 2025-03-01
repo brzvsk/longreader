@@ -8,6 +8,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { ArticleOptionsMenu } from "./article-options-menu"
 import { useState } from "react"
 import { cn } from "@/lib/utils"
+import { formatRelativeTime } from "@/utils/date-format"
 
 interface ArticleCardProps {
   article: Article
@@ -59,16 +60,7 @@ export function ArticleCard({ article, onArchive, onUnarchive, onProgressUpdate,
           <div className="flex items-center gap-1.5">
             <BookmarkIcon className="w-3.5 h-3.5" style={{ color: 'var(--tg-hint-color)' }} />
             <span className="text-xs" style={{ color: 'var(--tg-hint-color)' }}>
-              {(() => {
-                if (!article.timestamps.saved_at) return '';
-                const date = new Date(article.timestamps.saved_at)
-                const isCurrentYear = date.getFullYear() === new Date().getFullYear()
-                return date.toLocaleDateString('en-US', {
-                  month: 'long',
-                  day: 'numeric',
-                  year: isCurrentYear ? undefined : 'numeric'
-                })
-              })()}
+              {formatRelativeTime(article.timestamps.saved_at)}
             </span>
           </div>
           <ArticleOptionsMenu 

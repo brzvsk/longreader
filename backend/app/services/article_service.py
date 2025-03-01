@@ -54,6 +54,9 @@ async def get_user_articles_flat(user_id: str) -> UserArticleFlatCollection:
                 )
             )
     
+    # Sort articles by saved_at timestamp (newest first)
+    flat_articles.sort(key=lambda x: x.timestamps.saved_at or datetime.min, reverse=True)
+    
     return UserArticleFlatCollection(articles=flat_articles)
 
 async def get_user_article_flat(user_id: str, article_id: str) -> UserArticleFlat:
