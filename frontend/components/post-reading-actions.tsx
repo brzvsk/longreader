@@ -29,16 +29,6 @@ export function PostReadingActions({
   const lastProgressRef = useRef(initialProgress)
   const archiveButtonRef = useRef<HTMLButtonElement>(null)
 
-  const handleArchive = useCallback(async () => {
-    try {
-      await archiveArticle(articleId)
-      setIsArchived(true)
-      showArchiveEmojis()
-    } catch (error) {
-      console.error('Failed to archive article:', error)
-    }
-  }, [articleId])
-
   const showArchiveEmojis = useCallback(() => {
     if (!archiveButtonRef.current) return
     
@@ -77,6 +67,16 @@ export function PostReadingActions({
       }, 1100)
     }
   }, [])
+
+  const handleArchive = useCallback(async () => {
+    try {
+      await archiveArticle(articleId)
+      setIsArchived(true)
+      showArchiveEmojis()
+    } catch (error) {
+      console.error('Failed to archive article:', error)
+    }
+  }, [articleId, showArchiveEmojis])
 
   // Initial scroll restoration
   useEffect(() => {
