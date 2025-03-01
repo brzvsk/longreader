@@ -67,6 +67,52 @@ class ParserService:
         return title
         
     @staticmethod
+    def _strip_markdown(text: str) -> str:
+        """Strip markdown formatting from text, keeping only plain text.
+        
+        Args:
+            text: The markdown text to strip
+            
+        Returns:
+            Plain text without markdown formatting, links, or images
+        """
+        import re
+        
+        if not text:
+            return ""
+            
+        # Remove images: ![alt text](url)
+        text = re.sub(r'!\[.*?\]\(.*?\)', '', text)
+        
+        # Remove links but keep the text: [text](url) -> text
+        text = re.sub(r'\[(.*?)\]\(.*?\)', r'\1', text)
+        
+        # Remove headers: # Header -> Header
+        text = re.sub(r'^#+\s+', '', text, flags=re.MULTILINE)
+        
+        # Remove bold and italic: **bold** -> bold, *italic* -> italic
+        text = re.sub(r'\*\*(.*?)\*\*', r'\1', text)
+        text = re.sub(r'\*(.*?)\*', r'\1', text)
+        
+        # Remove code blocks and inline code
+        text = re.sub(r'```.*?```', '', text, flags=re.DOTALL)
+        text = re.sub(r'`(.*?)`', r'\1', text)
+        
+        # Remove blockquotes: > quote -> quote
+        text = re.sub(r'^>\s+', '', text, flags=re.MULTILINE)
+        
+        # Remove horizontal rules: ---, ***, ___
+        text = re.sub(r'^(---|\*\*\*|___)$', '', text, flags=re.MULTILINE)
+        
+        # Remove HTML tags
+        text = re.sub(r'<[^>]*>', '', text)
+        
+        # Normalize whitespace
+        text = re.sub(r'\s+', ' ', text).strip()
+        
+        return text
+        
+    @staticmethod
     def _extract_metadata(downloaded, content: str, title: str, source_url: str) -> tuple[str, ArticleMetadata]:
         """Extract and process article metadata
         
@@ -82,11 +128,13 @@ class ParserService:
         metadata = trafilatura.metadata.extract_metadata(downloaded)
         
         # Get description
-        description = (
-            metadata.description 
-            if metadata and metadata.description 
-            else content[:90] + "..." if content else "No description available"
-        )
+        if metadata and metadata.description:
+            # Use metadata description if available, but strip any markdown
+            description = ParserService._strip_markdown(metadata.description)
+        else:
+            # Otherwise use the first part of the content, stripped of markdown
+            plain_content = ParserService._strip_markdown(content)
+            description = plain_content[:90] + "..." if plain_content else "No description available"
         
         # Calculate reading time (300 words per minute)
         word_count = len(content.split())

@@ -44,11 +44,47 @@ class TestParserService:
             # Restore the original function
             trafilatura.metadata.extract_metadata = original_extract_metadata
     
+    def test_strip_markdown(self):
+        """Test that markdown is properly stripped from text"""
+        # Test case 1: Links and images
+        markdown = "Check out this [link](https://example.com) and ![image](https://example.com/image.jpg)"
+        expected = "Check out this link and"
+        result = ParserService._strip_markdown(markdown)
+        assert result == expected
+        
+        # Test case 2: Headers, bold, and italic
+        markdown = "# Main Header\n\n## Subheader\n\nThis is **bold** and *italic* text."
+        expected = "Main Header Subheader This is bold and italic text."
+        result = ParserService._strip_markdown(markdown)
+        assert result == expected
+        
+        # Test case 3: Code blocks and inline code
+        markdown = "Here is `inline code` and a code block:\n```python\nprint('hello')\n```"
+        expected = "Here is inline code and a code block:"
+        result = ParserService._strip_markdown(markdown)
+        assert result == expected
+        
+        # Test case 4: Blockquotes and horizontal rules
+        markdown = "> This is a quote\n\n---\n\nNormal text"
+        expected = "This is a quote Normal text"
+        result = ParserService._strip_markdown(markdown)
+        assert result == expected
+        
+        # Test case 5: HTML tags
+        markdown = "This has <strong>HTML</strong> tags"
+        expected = "This has HTML tags"
+        result = ParserService._strip_markdown(markdown)
+        assert result == expected
+        
+        # Test case 6: Empty or None input
+        assert ParserService._strip_markdown("") == ""
+        assert ParserService._strip_markdown(None) == ""
+    
     def test_extract_metadata(self):
         """Test that metadata is correctly extracted"""
         # Create a mock downloaded object with metadata
         mock_metadata = MagicMock()
-        mock_metadata.description = "This is a test description"
+        mock_metadata.description = "This is a **test** description with [link](https://example.com)"
         mock_metadata.author = "Test Author"
         mock_metadata.date = "2023-01-01"
         
@@ -59,6 +95,7 @@ class TestParserService:
         # Save the original function and parse_date method
         original_extract_metadata = trafilatura.metadata.extract_metadata
         original_parse_date = ParserService._parse_date
+        original_strip_markdown = ParserService._strip_markdown
         
         try:
             # Replace with our mocks
@@ -68,12 +105,13 @@ class TestParserService:
             
             # Test extraction
             title = "Test Article Title"
-            content = "This is the article content with some words to calculate reading time."
+            content = "This is the article content with some **markdown** and [links](https://example.com)."
             source_url = "https://example.com"
             
             description, article_metadata = ParserService._extract_metadata(None, content, title, source_url)
             
-            assert description == "This is a test description"
+            # Verify markdown was stripped from description
+            assert description == "This is a test description with link"
             assert article_metadata.source_url == source_url
             assert article_metadata.author == "Test Author"
             assert isinstance(article_metadata.publish_date, datetime)
@@ -82,7 +120,8 @@ class TestParserService:
             # Test with no description
             mock_metadata.description = None
             description, article_metadata = ParserService._extract_metadata(None, content, title, source_url)
-            assert description.startswith(content[:90])
+            # Verify markdown was stripped from content used as description
+            assert description.startswith("This is the article content with some markdown and links")
             
         finally:
             # Restore the original functions
