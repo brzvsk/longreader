@@ -1,5 +1,6 @@
 package goldenluk.readlaterbpt
 
+import com.google.gson.Gson
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -65,14 +66,20 @@ fun sendToParser(url: String, id: String, telegramClient: OkHttpTelegramClient) 
         .post(body)
         .build()
 
+    val gson = Gson()
+
     // Execute the request
     client.newCall(request).execute().use { response: Response ->
+        val responseBody = response.body?.string() ?: ""
         if (response.isSuccessful) {
-            sendText(id.toLong(), sentToParserSuccessMessage, telegramClient)
-            val responseBody = response.body?.string() ?: ""
+            val articleResponse = gson.fromJson(responseBody, ArticleResponse::class.java)
+            val articleUrl =
+                "https://t.me/ReadWatchLaterBot/LongreaderApp?startapp=article_${articleResponse.user_article_id}"
+            val successMessage = "Saved successfully! 📖\n[Open article]($articleUrl)"
+
+            sendText(id.toLong(), successMessage, telegramClient)
             sendLog(createLogMessageForSuccessSave(responseBody, id, url), telegramClient)
         } else {
-            val responseBody = response.body?.string() ?: ""
             if (responseBody.contains("429")) {
                 sendText(id.toLong(), "Saving failed :( Limit for today has been reached", telegramClient)
             } else {
@@ -82,16 +89,17 @@ fun sendToParser(url: String, id: String, telegramClient: OkHttpTelegramClient) 
                     telegramClient
                 )
             }
-            sendLog(createLogMessageForParserError(responseBody, id, url), telegramClient)
+            sendLog(createLogMessageForParserError(responseBody, id, url, response.code), telegramClient)
         }
     }
 }
 
-private fun createLogMessageForParserError(response: String, id: String, url: String): String {
+private fun createLogMessageForParserError(response: String, id: String, url: String, code: Int): String {
     return "UserId: $id \n" +
             "Action: parser error\nTime: ${System.currentTimeMillis()}\n" +
             "Url: $url \n" +
-            "Error: $response"
+            "Error: $response \n" +
+            "response.code(): $code"
 }
 
 private fun createLogMessageForSuccessSave(response: String, id: String, url: String): String {
