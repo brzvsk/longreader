@@ -78,7 +78,11 @@ fun sendToParser(url: String, id: String, telegramClient: OkHttpTelegramClient) 
                     .replace("_", "\\_")  // Escape underscore for MarkdownV2
 
             val successMessage = "Saved successfully! 📖\n[Open article]($articleUrl)"
-            sendText(id.toLong(), successMessage, telegramClient, parseMode = "MarkdownV2")
+            try {
+                sendText(id.toLong(), successMessage, telegramClient, parseMode = "MarkdownV2")
+            } catch (e: Exception) {
+                sendLog("Error sending message: ${e.message}", telegramClient)
+            }
             sendLog(createLogMessageForSuccessSave(responseBody, id, url), telegramClient)
         } else {
             if (responseBody.contains("429")) {
