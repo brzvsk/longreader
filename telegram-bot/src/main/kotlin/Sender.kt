@@ -75,8 +75,9 @@ fun sendToParser(url: String, id: String, telegramClient: OkHttpTelegramClient) 
             val articleResponse = gson.fromJson(responseBody, ArticleResponse::class.java)
             val articleUrl =
                 "https://t.me/ReadWatchLaterBot/LongreaderApp?startapp=article_${articleResponse.article_id}"
-            val successMessage = "Saved successfully! 📖\n[Open article]($articleUrl)"
+                    .replace("_", "\\_")  // Escape underscore for MarkdownV2
 
+            val successMessage = "Saved successfully! 📖\n[Open article]($articleUrl)"
             sendText(id.toLong(), successMessage, telegramClient, parseMode = "MarkdownV2")
             sendLog(createLogMessageForSuccessSave(responseBody, id, url), telegramClient)
         } else {
