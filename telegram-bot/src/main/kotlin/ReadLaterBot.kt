@@ -45,7 +45,7 @@ class ReadLaterBot : LongPollingSingleThreadUpdateConsumer {
             sendToParser(message.text, fromId.toString(), telegramClient)
         } else {
             sendLog(createLogMessageForNotALink(message), telegramClient)
-            sendText(fromId, "Not a link", telegramClient)
+            sendText(fromId, "It's not a link to save, but we got your message! If it's a feedback, we appreciate it ❤", telegramClient)
         }
     }
 
@@ -80,7 +80,8 @@ class ReadLaterBot : LongPollingSingleThreadUpdateConsumer {
 
     private fun createLogMessageForNotALink(message: Message) : String {
         return "User: ${message.from.userName}\nFirst Name: ${message.from.firstName}\n" +
-                "Last Name: ${message.from.lastName}\nAction: not a link\nTime: ${System.currentTimeMillis()}"
+                "Last Name: ${message.from.lastName}\nAction: not a link\nTime: ${System.currentTimeMillis()}\n" +
+                "Text(if presented): ${message.text}"
     }
 
     private fun createLogMessageForLink(message: Message) : String {
