@@ -663,6 +663,36 @@ class ParserService:
                 detail=str(e)
             )
 
+    @staticmethod
+    async def _check_daily_article_limit(user_id: str) -> None:
+        """Check if user has exceeded their daily article limit.
+        
+        Args:
+            user_id: The user's ID to check
+            
+        Raises:
+            HTTPException: If the daily limit is exceeded
+            
+        Note:
+            This check is skipped in test environment (IS_DEV_ENVIRONMENT=True)
+        """
+        # Skip check in test environment
+        if ParserService.IS_DEV_ENVIRONMENT:
+            logger.debug("Skipping daily article limit check in test environment")
+            return
+            
+        today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+        today_end = today_start + timedelta(days=1)
+        daily_count = await user_articles.count_documents({
+            "user_id": ObjectId(user_id),
+            "timestamps.saved_at": {"$gte": today_start, "$lt": today_end}
+        })
+        if daily_count >= ParserService.DAILY_ARTICLE_LIMIT:
+            logger.warning(f"User {user_id} exceeded daily article limit.")
+            raise HTTPException(
+                status_code=429,
+                detail=f"Daily article limit exceeded. You can parse up to {ParserService.DAILY_ARTICLE_LIMIT} articles per day."
+            )
 
     @staticmethod
     async def handle_parse_request(url: str, user_id: str) -> dict:
@@ -674,18 +704,7 @@ class ParserService:
             actual_user_id = str(user.id)
             
             # Check daily article limit
-            today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
-            today_end = today_start + timedelta(days=1)
-            daily_count = await user_articles.count_documents({
-                "user_id": ObjectId(actual_user_id),
-                "timestamps.saved_at": {"$gte": today_start, "$lt": today_end}
-            })
-            if daily_count >= ParserService.DAILY_ARTICLE_LIMIT:
-                logger.warning(f"User {user_id} exceeded daily article limit.")
-                raise HTTPException(
-                    status_code=429,
-                    detail=f"Daily article limit exceeded. You can parse up to {ParserService.DAILY_ARTICLE_LIMIT} articles per day."
-                )
+            await ParserService._check_daily_article_limit(actual_user_id)
 
             # Parse URL first
             article, html_content = ParserService.parse_url(url)
