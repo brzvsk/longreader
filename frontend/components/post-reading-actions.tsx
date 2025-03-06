@@ -285,8 +285,8 @@ export function PostReadingActions({
   return (
     <>
       {/* Progress bar */}
-      <div className="fixed bottom-0 left-0 right-0 z-[60] bg-[var(--tg-bg-color)]">
-        <div className="h-1 bg-[var(--tg-hint-color)]/30">
+      <div className="fixed bottom-0 left-0 right-0 z-[60] bg-[var(--tg-bg-color)] backdrop-blur-sm">
+        <div className="h-1 bg-[var(--tg-hint-color)]/30 mx-[env(safe-area-inset-left)] mb-[env(safe-area-inset-bottom)]">
           <div 
             className="h-full transition-all duration-300 bg-gradient-to-r from-purple-400 to-pink-600"
             style={{ width: `${progress}%` }}
