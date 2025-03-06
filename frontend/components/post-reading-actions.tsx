@@ -5,7 +5,7 @@ import { Button } from "./ui/button"
 import { cn } from "@/lib/utils"
 import { useEffect, useState, useCallback, useRef } from 'react'
 import confetti from 'canvas-confetti'
-import { updateArticleProgress, archiveArticle, shareArticle } from '@/services/articles'
+import { updateArticleProgress, archiveArticle, shareArticle, unarchiveArticle, getUserArticle } from '@/services/articles'
 import { useParams } from 'next/navigation'
 
 interface PostReadingActionsProps {
@@ -32,25 +32,45 @@ export function PostReadingActions({
   const lastScrollYRef = useRef(0)
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
-  const showArchiveEmojis = useCallback(() => {
+  // Check if article was already at 100% progress
+  useEffect(() => {
+    if (initialProgress === 100) {
+      setHasShownConfetti(true)
+    }
+  }, [initialProgress])
+
+  // Check initial article status
+  useEffect(() => {
+    const checkStatus = async () => {
+      try {
+        const article = await getUserArticle(articleId)
+        setIsArchived(!!article.timestamps.archived_at)
+      } catch (error) {
+        console.error('Failed to check article status:', error)
+      }
+    }
+    checkStatus()
+  }, [articleId])
+
+  const showEmojis = useCallback((emoji: string) => {
     if (!archiveButtonRef.current) return
     
     const buttonRect = archiveButtonRef.current.getBoundingClientRect()
     const centerX = buttonRect.left + buttonRect.width / 2
     const centerY = buttonRect.top + buttonRect.height / 2
     
-    // Create 5 archive emojis
+    // Create 5 emojis
     for (let i = 0; i < 5; i++) {
-      const emoji = document.createElement('div')
-      emoji.textContent = '📦'
-      emoji.style.position = 'fixed'
-      emoji.style.zIndex = '100'
-      emoji.style.fontSize = '24px'
-      emoji.style.left = `${centerX}px`
-      emoji.style.top = `${centerY}px`
-      emoji.style.pointerEvents = 'none'
-      emoji.style.transition = 'all 1s ease-out'
-      document.body.appendChild(emoji)
+      const emojiElement = document.createElement('div')
+      emojiElement.textContent = emoji
+      emojiElement.style.position = 'fixed'
+      emojiElement.style.zIndex = '100'
+      emojiElement.style.fontSize = '24px'
+      emojiElement.style.left = `${centerX}px`
+      emojiElement.style.top = `${centerY}px`
+      emojiElement.style.pointerEvents = 'none'
+      emojiElement.style.transition = 'all 1s ease-out'
+      document.body.appendChild(emojiElement)
       
       // Random direction for each emoji
       const angle = Math.random() * Math.PI * 2
@@ -60,16 +80,24 @@ export function PostReadingActions({
       
       // Animate after a small delay to ensure the transition works
       setTimeout(() => {
-        emoji.style.transform = `translate(${finalX - centerX}px, ${finalY - centerY}px) rotate(${Math.random() * 360}deg)`
-        emoji.style.opacity = '0'
+        emojiElement.style.transform = `translate(${finalX - centerX}px, ${finalY - centerY}px) rotate(${Math.random() * 360}deg)`
+        emojiElement.style.opacity = '0'
       }, 10)
       
       // Remove from DOM after animation completes
       setTimeout(() => {
-        document.body.removeChild(emoji)
+        document.body.removeChild(emojiElement)
       }, 1100)
     }
   }, [])
+
+  const showArchiveEmojis = useCallback(() => {
+    showEmojis('📦')
+  }, [showEmojis])
+
+  const showUnarchiveEmojis = useCallback(() => {
+    showEmojis('📑')
+  }, [showEmojis])
 
   // Helper function to safely trigger haptic feedback
   const triggerHapticFeedback = useCallback((type: 'success' | 'error') => {
@@ -87,25 +115,33 @@ export function PostReadingActions({
   }, [])
 
   const handleArchive = useCallback(async () => {
-    if (isArchiving || isArchived) return
+    if (isArchiving) return
+    
+    // Trigger impact haptic feedback immediately on button tap
+    const tg = window.Telegram?.WebApp
+    if (tg?.hapticFeedback) {
+      tg.hapticFeedback.impactOccurred('medium')
+    }
     
     setIsArchiving(true)
     try {
-      await archiveArticle(articleId)
-      setIsArchived(true)
-      showArchiveEmojis()
+      if (isArchived) {
+        await unarchiveArticle(articleId)
+        setIsArchived(false)
+        showUnarchiveEmojis()
+      } else {
+        await archiveArticle(articleId)
+        setIsArchived(true)
+        showArchiveEmojis()
+      }
       
-      // Trigger success haptic feedback
-      triggerHapticFeedback('success')
     } catch (error) {
-      console.error('Failed to archive article:', error)
+      console.error('Failed to update article archive status:', error)
       
-      // Trigger error haptic feedback
-      triggerHapticFeedback('error')
     } finally {
       setIsArchiving(false)
     }
-  }, [articleId, showArchiveEmojis, isArchiving, isArchived, triggerHapticFeedback])
+  }, [articleId, showArchiveEmojis, showUnarchiveEmojis, isArchiving, isArchived, triggerHapticFeedback])
 
   // Initial scroll restoration
   useEffect(() => {
@@ -257,7 +293,7 @@ export function PostReadingActions({
                 isArchived ? "bg-[var(--tg-hint-color)]/10" : "hover:bg-[var(--tg-hint-color)]/10"
               )}
               onClick={handleArchive}
-              disabled={isArchived || isArchiving}
+              disabled={isArchiving}
               ref={archiveButtonRef}
             >
               {isArchived ? (
