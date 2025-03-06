@@ -29,6 +29,8 @@ export function PostReadingActions({
   const updateTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const lastProgressRef = useRef(initialProgress)
   const archiveButtonRef = useRef<HTMLButtonElement>(null)
+  const lastScrollYRef = useRef(0)
+  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   const showArchiveEmojis = useCallback(() => {
     if (!archiveButtonRef.current) return
@@ -171,8 +173,15 @@ export function PostReadingActions({
       setProgress(boundedProgress)
       onProgressChange?.(boundedProgress)
 
-      // Show actions when near the end (90% or more)
-      if (boundedProgress >= 100) {
+      // Determine scroll direction
+      const isScrollingUp = scrollTop < lastScrollYRef.current
+      lastScrollYRef.current = scrollTop
+
+      // Show actions when:
+      // 1. At the beginning (first screen)
+      // 2. At the end (100% progress)
+      // 3. When scrolling up
+      if (boundedProgress >= 100 || boundedProgress <= 0 || isScrollingUp) {
         setIsVisible(true)
       } else {
         setIsVisible(false)
