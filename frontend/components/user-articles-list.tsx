@@ -131,7 +131,7 @@ export function UserArticlesList() {
               onClick={() => setActiveView('all')}
               className="text-2xl font-bold flex items-center gap-2"
             >
-              <span>📑</span>
+              <span>📚</span>
               <span className={cn(
                 activeView === 'all'
                   ? "bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-emerald-400"

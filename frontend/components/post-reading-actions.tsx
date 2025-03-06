@@ -113,7 +113,7 @@ export function PostReadingActions({
   }, [showEmojis])
 
   const showUnarchiveEmojis = useCallback(() => {
-    showEmojis('📑')
+    showEmojis('📚')
   }, [showEmojis])
 
   const showSaveEmojis = useCallback(() => {
