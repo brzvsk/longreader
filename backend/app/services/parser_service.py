@@ -551,19 +551,77 @@ class ParserService:
         
 
     @staticmethod
-    def parse_url(url: str) -> Article:
+    def _extract_content(html_content: str) -> tuple[Any, str]:
+        """Extract content from HTML using trafilatura.
+        
+        Args:
+            html_content: The HTML content to parse
+            
+        Returns:
+            Tuple of (downloaded_tree, extracted_content)
+            
+        Raises:
+            HTTPException: If content extraction fails
+        """
+        # Configure trafilatura
+        config = use_config()
+        config.set("DEFAULT", "EXTRACTION_TIMEOUT", "30")
+        config.set("DEFAULT", "MIN_EXTRACTED_SIZE", "100")
+        config.set("DEFAULT", "FAVOR_PRECISION", "True")
+        
+        # Extract content
+        downloaded = trafilatura.load_html(html_content)
+        content = trafilatura.extract(
+            downloaded,
+            output_format='markdown',
+            include_images=True,
+            include_links=True,
+            include_formatting=True,
+            favor_precision=True,
+            config=config
+        )
+        
+        if not content:
+            logger.error("Failed to extract content from HTML")
+            raise HTTPException(
+                status_code=422,  # Unprocessable Entity
+                detail="Could not extract content from this website. The page structure may not be supported or may require JavaScript to load content."
+            )
+            
+        return downloaded, content
+
+    @staticmethod
+    def _post_process_content(content: str, title: str) -> str:
+        """Post-process the extracted content.
+        
+        Args:
+            content: The extracted markdown content
+            title: The article title
+            
+        Returns:
+            The post-processed content
+        """
+        # Ensure paragraphs have double newlines
+        content = ParserService._ensure_paragraph_separation(content)
+        
+        # Remove duplicate H1 heading if it matches the title
+        content = ParserService._remove_duplicate_title(content, title, is_content=True)
+        
+        return content
+
+    @staticmethod
+    def parse_url(url: str) -> tuple[Article, str]:
         """Parse URL and return an Article object
         
         Args:
             url: The URL to parse
             
         Returns:
-            Article: A fully populated Article object
+            Tuple of (Article, html_content): A fully populated Article object and the original HTML content
             
         Raises:
             HTTPException: If there's an error fetching or parsing the content
         """
-        
         try:
             # Fetch the HTML content
             html_content = ParserService._fetch_html_content(url)
@@ -571,46 +629,18 @@ class ParserService:
             # Pre-process HTML content to escape special characters
             html_content = ParserService._preprocess_html_content(html_content)
             
-            # Configure trafilatura
-            config = use_config()
-            config.set("DEFAULT", "EXTRACTION_TIMEOUT", "30")
-            config.set("DEFAULT", "MIN_EXTRACTED_SIZE", "100")
-            config.set("DEFAULT", "FAVOR_PRECISION", "True")
-            config.set("DEFAULT", "INCLUDE_FORMATTING", "True")
-            config.set("DEFAULT", "INCLUDE_IMAGES", "True")
-            config.set("DEFAULT", "INCLUDE_LINKS", "True")
-            
             # Extract content
-            downloaded = trafilatura.load_html(html_content)
-            content = trafilatura.extract(
-                downloaded,
-                output_format='markdown',
-                include_images=True,
-                include_links=True,
-                include_formatting=True,
-                favor_precision=True,
-                config=config
-            )
-            
-            if not content:
-                logger.error(f"Failed to extract content from URL: {url}")
-                raise HTTPException(
-                    status_code=422,  # Unprocessable Entity
-                    detail="Could not extract content from this website. The page structure may not be supported or may require JavaScript to load content."
-                )
-            
-            # Post-process content to ensure paragraphs have double newlines
-            content = ParserService._ensure_paragraph_separation(content)
+            downloaded, content = ParserService._extract_content(html_content)
             
             logger.info(f"Successfully extracted content (length: {len(content)} chars)")
             
-            # First extract the title, using Open Graph title if available
+            # Extract title
             title = ParserService._extract_title(downloaded, html_content)
             
-            # Remove duplicate H1 heading if it matches the title
-            content = ParserService._remove_duplicate_title(content, title, is_content=True)
+            # Post-process content
+            content = ParserService._post_process_content(content, title)
             
-            # Then extract description and other metadata
+            # Extract description and other metadata
             description, article_metadata = ParserService._extract_metadata(downloaded, content, title, url)
             
             # Create and return Article object
