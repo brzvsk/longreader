@@ -524,6 +524,28 @@ class ParserService:
         return content
 
     @staticmethod
+    def _preprocess_html_content(html_content: str) -> str:
+        """Pre-process HTML content to escape special characters before markdown conversion.
+        
+        Args:
+            html_content: The original HTML content
+            
+        Returns:
+            Pre-processed HTML content with special characters escaped
+        """
+        import re
+        
+        # escape HTML entities
+        html_content = html_content.replace('&amp;', '\\&amp;')
+        html_content = html_content.replace('&lt;', '\\&lt;')
+        html_content = html_content.replace('&gt;', '\\&gt;')
+        html_content = html_content.replace('&quot;', '\\&quot;')
+        html_content = html_content.replace('&#39;', '\\&#39;')
+
+        return html_content
+        
+
+    @staticmethod
     def parse_url(url: str) -> Article:
         """Parse URL and return an Article object
         
@@ -540,6 +562,9 @@ class ParserService:
         try:
             # Fetch the HTML content
             html_content = ParserService._fetch_html_content(url)
+            
+            # Pre-process HTML content to escape special characters
+            html_content = ParserService._preprocess_html_content(html_content)
             
             # Configure trafilatura
             config = use_config()
