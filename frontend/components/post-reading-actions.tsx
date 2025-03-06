@@ -1,34 +1,40 @@
 'use client'
 
-import { Share, Archive, Check, Loader } from "lucide-react"
+import { Share, Archive, Check, Loader, Bookmark, RotateCcw } from "lucide-react"
 import { Button } from "./ui/button"
 import { cn } from "@/lib/utils"
 import { useEffect, useState, useCallback, useRef } from 'react'
 import confetti from 'canvas-confetti'
-import { updateArticleProgress, archiveArticle, shareArticle, unarchiveArticle, getUserArticle } from '@/services/articles'
-import { useParams } from 'next/navigation'
+import { updateArticleProgress, archiveArticle, shareArticle, unarchiveArticle, getUserArticle, saveArticle } from '@/services/articles'
+import { useParams, useRouter } from 'next/navigation'
+import { ArticleContent } from '@/types/article'
 
 interface PostReadingActionsProps {
   isVisible: boolean
   initialProgress: number
   onProgressChange?: (progress: number) => void
+  article?: ArticleContent
 }
 
 export function PostReadingActions({ 
   isVisible: initialIsVisible, 
   initialProgress,
-  onProgressChange 
+  onProgressChange,
+  article
 }: PostReadingActionsProps) {
   const params = useParams()
+  const router = useRouter()
   const articleId = params.id as string
   const [hasShownConfetti, setHasShownConfetti] = useState(false)
   const [progress, setProgress] = useState(initialProgress)
   const [isVisible, setIsVisible] = useState(initialIsVisible)
   const [isArchived, setIsArchived] = useState(false)
   const [isArchiving, setIsArchiving] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
+  const [shouldShowSave, setShouldShowSave] = useState(false)
   const updateTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const lastProgressRef = useRef(initialProgress)
-  const archiveButtonRef = useRef<HTMLButtonElement>(null)
+  const actionButtonRef = useRef<HTMLButtonElement>(null)
   const lastScrollYRef = useRef(0)
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
@@ -38,6 +44,17 @@ export function PostReadingActions({
       setHasShownConfetti(true)
     }
   }, [initialProgress])
+
+  // Determine if save button should be shown
+  useEffect(() => {
+    if (!article?.timestamps) return
+
+    const isDeleted = article.timestamps.deleted_at !== null
+    const isSaved = article.timestamps.saved_at !== null
+    
+    // Show save button if article is new (not saved) or deleted
+    setShouldShowSave(!isSaved || isDeleted)
+  }, [article])
 
   // Check initial article status
   useEffect(() => {
@@ -53,9 +70,9 @@ export function PostReadingActions({
   }, [articleId])
 
   const showEmojis = useCallback((emoji: string) => {
-    if (!archiveButtonRef.current) return
+    if (!actionButtonRef.current) return
     
-    const buttonRect = archiveButtonRef.current.getBoundingClientRect()
+    const buttonRect = actionButtonRef.current.getBoundingClientRect()
     const centerX = buttonRect.left + buttonRect.width / 2
     const centerY = buttonRect.top + buttonRect.height / 2
     
@@ -99,6 +116,10 @@ export function PostReadingActions({
     showEmojis('📑')
   }, [showEmojis])
 
+  const showSaveEmojis = useCallback(() => {
+    showEmojis('📚')
+  }, [showEmojis])
+
   // Helper function to safely trigger haptic feedback
   const triggerHapticFeedback = useCallback((type: 'success' | 'error') => {
     // Check if Telegram WebApp is available
@@ -113,6 +134,30 @@ export function PostReadingActions({
       }
     }
   }, [])
+
+  const handleSave = useCallback(async () => {
+    if (isSaving) return
+    
+    // Trigger impact haptic feedback immediately on button tap
+    const tg = window.Telegram?.WebApp
+    if (tg?.hapticFeedback) {
+      tg.hapticFeedback.impactOccurred('medium')
+    }
+    
+    setIsSaving(true)
+    try {
+      await saveArticle(articleId)
+      
+      // Dispatch a custom event to notify that an article was saved
+      window.dispatchEvent(new CustomEvent('article-saved'))
+      
+      // Navigate to home page
+      router.push('/')
+    } catch (error) {
+      console.error('Failed to save article:', error)
+      setIsSaving(false)
+    }
+  }, [articleId, isSaving, router])
 
   const handleArchive = useCallback(async () => {
     if (isArchiving) return
@@ -254,6 +299,12 @@ export function PostReadingActions({
     }
   }
 
+  if (!article?.timestamps) {
+    return null
+  }
+
+  const isDeleted = article.timestamps.deleted_at !== null
+
   return (
     <>
       {/* Progress bar */}
@@ -285,34 +336,51 @@ export function PostReadingActions({
               <Share className="w-4 h-4" />
               Share
             </Button>
-            <Button 
-              variant="outline" 
-              size="lg" 
-              className={cn(
-                "flex items-center gap-2 border-[var(--tg-hint-color)] text-[var(--tg-text-color)] transition-all duration-300",
-                isArchived ? "bg-[var(--tg-hint-color)]/10" : "hover:bg-[var(--tg-hint-color)]/10"
-              )}
-              onClick={handleArchive}
-              disabled={isArchiving}
-              ref={archiveButtonRef}
-            >
-              {isArchived ? (
-                <>
-                  <Check className="w-4 h-4" />
-                  Archived
-                </>
-              ) : isArchiving ? (
-                <>
-                  <Loader className="w-4 h-4 animate-spin" />
-                  Archiving...
-                </>
-              ) : (
-                <>
-                  <Archive className="w-4 h-4" />
-                  Archive
-                </>
-              )}
-            </Button>
+            {shouldShowSave ? (
+              <Button 
+                variant="outline" 
+                size="lg" 
+                className={cn(
+                  "flex items-center gap-2 border-[var(--tg-hint-color)] text-[var(--tg-text-color)] transition-all duration-300",
+                  "hover:bg-[var(--tg-hint-color)]/10"
+                )}
+                onClick={handleSave}
+                disabled={isSaving}
+                ref={actionButtonRef}
+              >
+                <Bookmark className="w-4 h-4" />
+                {isSaving ? 'Saving...' : 'Save to read later'}
+              </Button>
+            ) : (
+              <Button 
+                variant="outline" 
+                size="lg" 
+                className={cn(
+                  "flex items-center gap-2 border-[var(--tg-hint-color)] text-[var(--tg-text-color)] transition-all duration-300",
+                  isArchived ? "bg-[var(--tg-hint-color)]/10" : "hover:bg-[var(--tg-hint-color)]/10"
+                )}
+                onClick={handleArchive}
+                disabled={isArchiving}
+                ref={actionButtonRef}
+              >
+                {isArchived ? (
+                  <>
+                    <Check className="w-4 h-4" />
+                    Archived
+                  </>
+                ) : isArchiving ? (
+                  <>
+                    <Loader className="w-4 h-4 animate-spin" />
+                    Archiving...
+                  </>
+                ) : (
+                  <>
+                    <Archive className="w-4 h-4" />
+                    Archive
+                  </>
+                )}
+              </Button>
+            )}
           </div>
         </div>
       </div>

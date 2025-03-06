@@ -9,31 +9,25 @@ import { ArticleContent } from "@/components/article-content"
 import { ArticleContent as ArticleType } from "@/types/article"
 import { MDXRemoteSerializeResult } from 'next-mdx-remote'
 import { PostReadingActions } from '@/components/post-reading-actions'
-import { ArticleSaveButton } from '@/components/article-save-button'
 import { useDeepLink } from '@/components/providers/deep-link-provider'
 
 interface ClientArticleProps {
   articleId: string
 }
 
-// Custom link component that handles external links
-const CustomLink = (props: React.AnchorHTMLAttributes<HTMLAnchorElement>) => {
-  const { href, ...rest } = props
-  const isExternal = href && !href.startsWith('/')
-
-  if (isExternal) {
-    return <a {...rest} href={href} target="_blank" rel="noopener noreferrer" />
-  }
-
-  return <a {...props} />
-}
+// Custom link component that opens links in a new tab
+const CustomLink = ({ href, children }: { href: string; children: React.ReactNode }) => (
+  <a href={href} target="_blank" rel="noopener noreferrer">
+    {children}
+  </a>
+)
 
 export function ClientArticle({ articleId }: ClientArticleProps) {
   const [article, setArticle] = useState<ArticleType | null>(null)
   const [mdxSource, setMdxSource] = useState<MDXRemoteSerializeResult | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
-useDeepLink()
+  useDeepLink()
 
   useEffect(() => {
     const fetchArticle = async () => {
@@ -66,13 +60,13 @@ useDeepLink()
 
   return (
     <div className="relative">
-      <ArticleSaveButton article={article} />
       <ArticleContent article={article}>
         <MDXRemote {...mdxSource} components={{ a: CustomLink }} />
       </ArticleContent>
       <PostReadingActions
         isVisible={!!article.timestamps.saved_at}
         initialProgress={article.progress.percentage}
+        article={article}
       />
     </div>
   )
