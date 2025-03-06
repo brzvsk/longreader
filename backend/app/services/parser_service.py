@@ -533,15 +533,20 @@ class ParserService:
         Returns:
             Pre-processed HTML content with special characters escaped
         """
-        import re
         
-        # escape HTML entities
+        # First, normalize all newlines to \n
+        html_content = html_content.replace('\r\n', '\n').replace('\r', '\n')
+        
+        # Escape HTML entities
         html_content = html_content.replace('&amp;', '\\&amp;')
         html_content = html_content.replace('&lt;', '\\&lt;')
         html_content = html_content.replace('&gt;', '\\&gt;')
         html_content = html_content.replace('&quot;', '\\&quot;')
         html_content = html_content.replace('&#39;', '\\&#39;')
-
+        html_content = html_content.replace('{', '\\{')
+        html_content = html_content.replace('}', '\\}')
+        
+        
         return html_content
         
 
