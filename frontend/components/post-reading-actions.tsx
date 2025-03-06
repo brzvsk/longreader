@@ -1,6 +1,6 @@
 'use client'
 
-import { Share, Archive, Check, Loader, Bookmark, RotateCcw } from "lucide-react"
+import { Share, Archive, Check, Loader, Bookmark } from "lucide-react"
 import { Button } from "./ui/button"
 import { cn } from "@/lib/utils"
 import { useEffect, useState, useCallback, useRef } from 'react'
@@ -36,7 +36,6 @@ export function PostReadingActions({
   const lastProgressRef = useRef(initialProgress)
   const actionButtonRef = useRef<HTMLButtonElement>(null)
   const lastScrollYRef = useRef(0)
-  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   // Check if article was already at 100% progress
   useEffect(() => {
@@ -49,11 +48,10 @@ export function PostReadingActions({
   useEffect(() => {
     if (!article?.timestamps) return
 
-    const isDeleted = article.timestamps.deleted_at !== null
     const isSaved = article.timestamps.saved_at !== null
     
-    // Show save button if article is new (not saved) or deleted
-    setShouldShowSave(!isSaved || isDeleted)
+    // Show save button if article is new (not saved)
+    setShouldShowSave(!isSaved)
   }, [article])
 
   // Check initial article status
@@ -116,25 +114,6 @@ export function PostReadingActions({
     showEmojis('📚')
   }, [showEmojis])
 
-  const showSaveEmojis = useCallback(() => {
-    showEmojis('📚')
-  }, [showEmojis])
-
-  // Helper function to safely trigger haptic feedback
-  const triggerHapticFeedback = useCallback((type: 'success' | 'error') => {
-    // Check if Telegram WebApp is available
-    const tg = window.Telegram?.WebApp
-    
-    if (tg?.hapticFeedback) {
-      if (type === 'success') {
-        tg.hapticFeedback.notificationOccurred('success')
-        tg.hapticFeedback.impactOccurred('medium')
-      } else if (type === 'error') {
-        tg.hapticFeedback.notificationOccurred('error')
-      }
-    }
-  }, [])
-
   const handleSave = useCallback(async () => {
     if (isSaving) return
     
@@ -186,7 +165,7 @@ export function PostReadingActions({
     } finally {
       setIsArchiving(false)
     }
-  }, [articleId, showArchiveEmojis, showUnarchiveEmojis, isArchiving, isArchived, triggerHapticFeedback])
+  }, [articleId, showArchiveEmojis, showUnarchiveEmojis, isArchiving, isArchived])
 
   // Initial scroll restoration
   useEffect(() => {
@@ -302,8 +281,6 @@ export function PostReadingActions({
   if (!article?.timestamps) {
     return null
   }
-
-  const isDeleted = article.timestamps.deleted_at !== null
 
   return (
     <>
