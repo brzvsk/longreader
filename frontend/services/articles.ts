@@ -22,7 +22,9 @@ export async function getUserArticle(articleId: string): Promise<ArticleContent>
 
 export async function updateArticleProgress(articleId: string, progress: number): Promise<void> {
   const userId = getUserId()
-  await api.put(`/users/${userId}/articles/${articleId}/progress?progress_percentage=${progress}`)
+  // Ensure progress is a finite number between 0 and 100
+  const validProgress = Math.min(Math.max(Number.isFinite(progress) ? progress : 0, 0), 100)
+  await api.put(`/users/${userId}/articles/${articleId}/progress?progress_percentage=${validProgress}`)
 }
 
 export async function archiveArticle(articleId: string): Promise<void> {
