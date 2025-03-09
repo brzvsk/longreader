@@ -9,6 +9,9 @@ import okhttp3.Response
 import org.telegram.telegrambots.client.okhttp.OkHttpTelegramClient
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboard
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardRow
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException
 
 
@@ -76,13 +79,31 @@ fun sendToParser(url: String, id: String, telegramClient: OkHttpTelegramClient) 
             val botUsername = System.getenv("TELEGRAM_BOT_USERNAME") ?: "ReadWatchLaterBot"
             val appName = System.getenv("TELEGRAM_APP_NAME") ?: "LongreaderApp"
             val articleUrl = "https://t.me/$botUsername/$appName?startapp=article_${articleResponse.article_id}"
-            val successMessage = "Saved successfully! To open click the link $articleUrl \nOr open the app clicking blue button to the left of the input field"
+            val successMessage = "Saved ✅"
 
-            sendText(id.toLong(), successMessage, telegramClient)
+            // Create inline keyboard markup using the builder pattern
+            val button = InlineKeyboardButton.builder()
+                .text("Open Article 📖")
+                .url(articleUrl)
+                .build()
+
+            val row = InlineKeyboardRow()
+            row.add(button)
+
+            val keyboard = InlineKeyboardMarkup.builder()
+                .keyboard(listOf(row))
+                .build()
+
+            sendText(
+                id.toLong(), 
+                successMessage, 
+                telegramClient,
+                replyKeyboardMarkup = keyboard
+            )
             sendLog(createLogMessageForSuccessSave(responseBody, id, url), telegramClient)
         } else {
             if (responseBody.contains("429")) {
-                sendText(id.toLong(), "Saving failed :( Limit for today has been reached", telegramClient)
+                sendText(id.toLong(), "Saving failed :( Limit of 10 articles per day has been reached. Need more articles? Simply write 'no limit' in the chat below", telegramClient)
             } else {
                 sendText(
                     id.toLong(),
