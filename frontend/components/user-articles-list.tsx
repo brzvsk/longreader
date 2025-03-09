@@ -25,7 +25,28 @@ function EmptyState() {
         Send link to the bot
       </h2>
       <p className="text-xl text-center" style={{ color: 'var(--tg-hint-color)' }}>
-        It will appear here<br />for future readings 📚
+        I will extract the article for you<br />in distraction-free format 📚
+      </p>
+    </div>
+  )
+}
+
+function ArchiveEmptyState() {
+  return (
+    <div className="flex flex-col items-center justify-center py-24">
+      <div className="relative mb-6">
+        <svg width="0" height="0">
+          <linearGradient id="archive-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop stopColor="#f6b73c" offset="0%" />
+            <stop stopColor="#ea8d8d" offset="100%" />
+          </linearGradient>
+        </svg>
+      </div>
+      <h2 className="text-2xl text-center font-bold mb-2" style={{ color: 'var(--tg-hint-color)' }}>
+        Archive your articles
+      </h2>
+      <p className="text-xl text-center" style={{ color: 'var(--tg-hint-color)' }}>
+        Think of it as your personal library<br />of completed reads 📦
       </p>
     </div>
   )
@@ -165,7 +186,9 @@ export function UserArticlesList() {
             ))
           ) : activeView === 'all' ? (
             <EmptyState />
-          ) : null}
+          ) : (
+            <ArchiveEmptyState />
+          )}
         </div>
       </section>
     </div>
