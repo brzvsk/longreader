@@ -67,25 +67,36 @@ class ReadLaterBot : LongPollingSingleThreadUpdateConsumer {
         when (message.text) {
             "/start" -> {
                 sendLog(createLogMessageForStart(message), telegramClient)
-                sendText(fromId, startMessage, telegramClient)
+                sendText(fromId, startMessage, telegramClient, parseMode = "HTML")
             }
-            "/help" -> sendText(fromId, startMessage, telegramClient)
+            "/help" -> sendText(fromId, startMessage, telegramClient, parseMode = "HTML")
         }
     }
 
     private fun createLogMessageForStart(message: Message) : String {
-        return "User: ${message.from.userName}\nFirst Name: ${message.from.firstName}\n" +
-                "Last Name: ${message.from.lastName}\nAction: start\nTime: ${System.currentTimeMillis()}"
+        return """
+            User ID: ${message.from.id}
+            Name: ${message.from.firstName} ${message.from.lastName}
+            Action: start
+            Data: -
+        """.trimIndent()
     }
 
     private fun createLogMessageForNotALink(message: Message) : String {
-        return "User: ${message.from.userName}\nFirst Name: ${message.from.firstName}\n" +
-                "Last Name: ${message.from.lastName}\nAction: not a link\nTime: ${System.currentTimeMillis()}\n" +
-                "Text(if presented): ${message.text}"
+        return """
+            User ID: ${message.from.id}
+            Name: ${message.from.firstName} ${message.from.lastName}
+            Action: not_a_link
+            Data: ${message.text ?: "-"}
+        """.trimIndent()
     }
 
     private fun createLogMessageForLink(message: Message) : String {
-        return "User: ${message.from.userName}\nFirst Name: ${message.from.firstName}\n" +
-                "Last Name: ${message.from.lastName}\nAction: link sent to parser\nTime: ${System.currentTimeMillis()}"
+        return """
+            User ID: ${message.from.id}
+            Name: ${message.from.firstName} ${message.from.lastName}
+            Action: link_sent_to_parser
+            Data: ${message.text ?: "-"}
+        """.trimIndent()
     }
 }

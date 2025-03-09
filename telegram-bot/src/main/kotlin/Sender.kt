@@ -117,18 +117,21 @@ fun sendToParser(url: String, id: String, telegramClient: OkHttpTelegramClient) 
 }
 
 private fun createLogMessageForParserError(response: String, id: String, url: String, code: Int): String {
-    return "UserId: $id \n" +
-            "Action: parser error\nTime: ${System.currentTimeMillis()}\n" +
-            "Url: $url \n" +
-            "Error: $response \n" +
-            "response.code(): $code"
+    return """
+        User ID: $id
+        Name: -
+        Action: parser_error
+        Data: URL: $url, Error: $response, Code: $code
+    """.trimIndent()
 }
 
 private fun createLogMessageForSuccessSave(response: String, id: String, url: String): String {
-    return "UserId: $id \n" +
-            "Action: parser success\nTime: ${System.currentTimeMillis()}\n" +
-            "Url: $url \n" +
-            "Response: $response"
+    return """
+        User ID: $id
+        Name: -
+        Action: parser_success
+        Data: $url
+    """.trimIndent()
 }
 
 fun sendLog(
@@ -141,10 +144,19 @@ fun sendLog(
         return
     }
 
+    val timestamp = java.time.Instant.ofEpochMilli(System.currentTimeMillis())
+        .atZone(java.time.ZoneOffset.UTC)
+        .format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS"))
+    
+    val messageWithTimestamp = """
+        Timestamp: $timestamp UTC
+$message
+    """.trimIndent()
+
     val sendMessageBuilder = SendMessage.builder()
         .chatId(-1002328089278)
         .messageThreadId(552)
-        .text(message)
+        .text(messageWithTimestamp)
         .disableWebPagePreview(disableWebPagePreview)
 
     val sendMessage = sendMessageBuilder.build()
