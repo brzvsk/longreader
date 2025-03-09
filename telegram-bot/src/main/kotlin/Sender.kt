@@ -83,7 +83,7 @@ fun sendToParser(url: String, id: String, telegramClient: OkHttpTelegramClient) 
 
             // Create inline keyboard markup using the builder pattern
             val button = InlineKeyboardButton.builder()
-                .text("Open Article 📖")
+                .text("Open in Reader 📚")
                 .url(articleUrl)
                 .build()
 
