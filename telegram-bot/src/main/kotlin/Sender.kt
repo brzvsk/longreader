@@ -73,8 +73,9 @@ fun sendToParser(url: String, id: String, telegramClient: OkHttpTelegramClient) 
         val responseBody = response.body?.string() ?: ""
         if (response.isSuccessful) {
             val articleResponse = gson.fromJson(responseBody, ArticleResponse::class.java)
-            val articleUrl =
-                "https://t.me/ReadWatchLaterBot/LongreaderApp?startapp=article_${articleResponse.article_id}"
+            val botUsername = System.getenv("TELEGRAM_BOT_USERNAME") ?: "ReadWatchLaterBot"
+            val appName = System.getenv("TELEGRAM_APP_NAME") ?: "LongreaderApp"
+            val articleUrl = "https://t.me/$botUsername/$appName?startapp=article_${articleResponse.article_id}"
             val successMessage = "Saved successfully! To open click the link $articleUrl \nOr open the app clicking blue button to the left of the input field"
 
             sendText(id.toLong(), successMessage, telegramClient)
@@ -114,6 +115,11 @@ fun sendLog(
     telegramClient: OkHttpTelegramClient,
     disableWebPagePreview: Boolean = true,
 ) {
+    val environment = System.getenv("TELEGRAM_BOT_ENVIRONMENT") ?: "test"
+    if (environment != "prod") {
+        return
+    }
+
     val sendMessageBuilder = SendMessage.builder()
         .chatId(-1002328089278)
         .messageThreadId(552)
