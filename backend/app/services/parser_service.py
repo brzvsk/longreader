@@ -1,5 +1,4 @@
-from typing import Optional, Dict, Any
-import asyncio
+from typing import Optional, Any
 import trafilatura
 from trafilatura.settings import use_config
 import httpx
@@ -9,7 +8,6 @@ from bson import ObjectId
 import logging
 from fastapi import HTTPException
 import random
-import json
 import pathlib
 
 from ..models.article import Article, ArticleMetadata
@@ -610,51 +608,82 @@ class ParserService:
         return content
 
     @staticmethod
-    def parse_url(url: str) -> tuple[Article, str]:
-        """Parse URL and return an Article object
+    async def parse_url(url: str, user_id: str) -> dict:
+        """Parse URL and return the article and user article IDs
         
         Args:
             url: The URL to parse
+            user_id: User ID to create/get user article relationship (required)
             
         Returns:
-            Tuple of (Article, html_content): A fully populated Article object and the original HTML content
+            dict: Contains article_id and user_article_id
             
         Raises:
             HTTPException: If there's an error fetching or parsing the content
         """
         try:
-            # Fetch the HTML content
-            html_content = ParserService._fetch_html_content(url)
+            # First check if article already exists
+            existing_article = await articles.find_one({"metadata.source_url": url})
+            article_id = None
             
-            # Pre-process HTML content to escape special characters
-            html_content = ParserService._preprocess_html_content(html_content)
+            if existing_article:
+                logger.info(f"Found existing article for URL: {url}")
+                article_id = existing_article["_id"]
+            else:
+                logger.info(f"No existing article found for URL: {url}, proceeding with parsing")
+                # Fetch and parse article
+                html_content = ParserService._fetch_html_content(url)
+                html_content = ParserService._preprocess_html_content(html_content)
+                downloaded, content = ParserService._extract_content(html_content)
+                
+                # Extract and process article data
+                title = ParserService._extract_title(downloaded, html_content)
+                content = ParserService._post_process_content(content, title)
+                description, article_metadata = ParserService._extract_metadata(downloaded, content, title, url)
+                
+                # Create and save article
+                article = Article(
+                    title=title,
+                    content=content,
+                    short_description=description,
+                    metadata=article_metadata
+                )
+                article_dict = article.model_dump(by_alias=True, exclude={"id"})
+                result = await articles.insert_one(article_dict)
+                article_id = result.inserted_id
+                
+                # Save local files if in development environment
+                if ParserService.IS_DEV_ENVIRONMENT:
+                    ParserService._save_html_file(html_content, article, str(article_id))
+                    ParserService._save_markdown_file(article, str(article_id))
             
-            # Extract content
-            downloaded, content = ParserService._extract_content(html_content)
+            # Check if user article relationship exists
+            existing_user_article = await user_articles.find_one({
+                "user_id": ObjectId(user_id),
+                "article_id": article_id
+            })
             
-            logger.info(f"Successfully extracted content (length: {len(content)} chars)")
+            if existing_user_article:
+                logger.info(f"Found existing user-article relationship for user {user_id}")
+                user_article_id = existing_user_article["_id"]
+            else:
+                logger.info(f"Creating new user-article relationship for user {user_id}")
+                # Create user article relationship
+                user_article_data = {
+                    "user_id": ObjectId(user_id),
+                    "article_id": article_id,
+                    "progress": {"percentage": 0, "last_position": 0},
+                    "timestamps": {"saved_at": datetime.utcnow()}
+                }
+                result = await user_articles.insert_one(user_article_data)
+                user_article_id = result.inserted_id
             
-            # Extract title
-            title = ParserService._extract_title(downloaded, html_content)
-            
-            # Post-process content
-            content = ParserService._post_process_content(content, title)
-            
-            # Extract description and other metadata
-            description, article_metadata = ParserService._extract_metadata(downloaded, content, title, url)
-            
-            # Create and return Article object
-            article = Article(
-                title=title,
-                content=content,
-                short_description=description,
-                metadata=article_metadata
-            )
-            
-            return article, html_content
+            return {
+                "article_id": str(article_id),
+                "user_article_id": str(user_article_id)
+            }
             
         except HTTPException:
-            # Re-raise HTTP exceptions as is
             raise
         except Exception as e:
             logger.error(f"Error parsing URL {url}: {str(e)}", exc_info=True)
@@ -699,48 +728,27 @@ class ParserService:
         """Handle complete article parsing flow including user creation and error handling"""
         logger.info(f"Handling parse request for URL: {url} from user: {user_id}")
         try:
-            # If user never opened the app before, we create a new user
+            # Get or create user
             user = await get_or_create_by_telegram_id(user_id)
             actual_user_id = str(user.id)
             
             # Check daily article limit
             await ParserService._check_daily_article_limit(actual_user_id)
 
-            # Parse URL first
-            article, html_content = ParserService.parse_url(url)
+            # Parse URL and get article and user article IDs
+            result = await ParserService.parse_url(url, actual_user_id)
             
-            # Save article to database
-            result_article = await articles.insert_one(article.model_dump(by_alias=True, exclude={"id"}))
-            article_id = str(result_article.inserted_id)
-            
-            # Save local files if in development environment
-            if ParserService.IS_DEV_ENVIRONMENT:
-                ParserService._save_html_file(html_content, article, article_id)
-                ParserService._save_markdown_file(article, article_id)
-            
-            # Create user article link
-            user_article_data = {
-                "user_id": ObjectId(actual_user_id),
-                "article_id": result_article.inserted_id,
-                "progress": {"percentage": 0, "last_position": 0},
-                "timestamps": {"saved_at": datetime.utcnow()}
-            }
-            
-            result_user_article = await user_articles.insert_one(user_article_data)
-            
-            response_data = {
-                "article_id": article_id,
-                "user_article_id": str(result_user_article.inserted_id),
+            return {
+                "article_id": result["article_id"],
+                "user_article_id": result["user_article_id"],
                 "url": url
             }
-            return response_data
             
         except HTTPException:
-            # Re-raise HTTP exceptions as is
             raise
         except Exception as e:
             logger.error(f"Failed to process parse request for URL: {url}", exc_info=True)
             raise HTTPException(
                 status_code=500,
-                detail=f"Internal server error: {str(e)}"
+                detail=f"Failed to parse article: {str(e)}"
             ) 

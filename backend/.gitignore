@@ -43,3 +43,4 @@ app/data/parsed_articles/
 # Test data
 tests/test_data/
 tests/.pytest_cache/ 
+.coverage

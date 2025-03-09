@@ -1,4 +1,3 @@
-from typing import List
 from fastapi import HTTPException
 from bson import ObjectId
 from ..models.article import Article, FlattenedTimestamps, UserArticle, UserArticleFlat, UserArticleFlatCollection
