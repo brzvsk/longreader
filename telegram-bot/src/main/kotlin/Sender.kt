@@ -8,7 +8,11 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
 import org.telegram.telegrambots.client.okhttp.OkHttpTelegramClient
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboard
+import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardRow
+import org.telegram.telegrambots.meta.api.objects.message.Message
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException
 
 
@@ -16,10 +20,11 @@ fun sendText(
     id: Long,
     message: String,
     telegramClient: OkHttpTelegramClient,
-    replyKeyboardMarkup: ReplyKeyboard? = null,
+    replyKeyboardMarkup: InlineKeyboardMarkup? = null,
     disableWebPagePreview: Boolean = true,
-    parseMode: String? = null
-) {
+    parseMode: String? = null,
+    replyToMessageId: Int? = null
+): Message {
     val sendMessageBuilder = SendMessage.builder()
         .chatId(id.toString())
         .text(message)
@@ -31,16 +36,60 @@ fun sendText(
     if (parseMode != null) {
         sendMessageBuilder.parseMode(parseMode)
     }
+    if (replyToMessageId != null) {
+        sendMessageBuilder.replyToMessageId(replyToMessageId)
+    }
     val sendMessage = sendMessageBuilder.build()
 
     try {
-        telegramClient.execute(sendMessage)
+        return telegramClient.execute(sendMessage)
     } catch (e: TelegramApiException) {
         e.printStackTrace()
+        throw e
     }
 }
 
-fun sendToParser(url: String, id: String, telegramClient: OkHttpTelegramClient) {
+fun editMessage(
+    chatId: Long,
+    messageId: Int,
+    newText: String,
+    telegramClient: OkHttpTelegramClient,
+    replyKeyboardMarkup: InlineKeyboardMarkup? = null,
+    parseMode: String? = null
+) {
+    val editMessageBuilder = EditMessageText.builder()
+        .chatId(chatId.toString())
+        .messageId(messageId)
+        .text(newText)
+
+    if (replyKeyboardMarkup != null) {
+        editMessageBuilder.replyMarkup(replyKeyboardMarkup)
+    }
+    if (parseMode != null) {
+        editMessageBuilder.parseMode(parseMode)
+    }
+    val editMessage = editMessageBuilder.build()
+
+    try {
+        telegramClient.execute(editMessage)
+    } catch (e: TelegramApiException) {
+        e.printStackTrace()
+        throw e
+    }
+}
+
+fun sendToParser(message: Message, telegramClient: OkHttpTelegramClient) {
+    val url = message.text
+    val id = message.from.id.toString()
+
+    // Send initial "Saving..." message as a reply
+    val savingMessage = sendText(
+        id.toLong(), 
+        "Saving...", 
+        telegramClient,
+        replyToMessageId = message.messageId
+    )
+
     val client = OkHttpClient()
 
     // Define the JSON media type
@@ -73,40 +122,66 @@ fun sendToParser(url: String, id: String, telegramClient: OkHttpTelegramClient) 
         val responseBody = response.body?.string() ?: ""
         if (response.isSuccessful) {
             val articleResponse = gson.fromJson(responseBody, ArticleResponse::class.java)
-            val articleUrl =
-                "https://t.me/ReadWatchLaterBot/LongreaderApp?startapp=article_${articleResponse.article_id}"
-            val successMessage = "Saved successfully! To open click the link $articleUrl \nOr open the app clicking blue button to the left of the input field"
+            val botUsername = System.getenv("TELEGRAM_BOT_USERNAME") ?: "ReadWatchLaterBot"
+            val appName = System.getenv("TELEGRAM_APP_NAME") ?: "LongreaderApp"
+            val articleUrl = "https://t.me/$botUsername/$appName?startapp=article_${articleResponse.article_id}"
 
-            sendText(id.toLong(), successMessage, telegramClient)
+            // Create inline keyboard markup using the builder pattern
+            val button = InlineKeyboardButton.builder()
+                .text("Open in Reader 📚")
+                .url(articleUrl)
+                .build()
+
+            val row = InlineKeyboardRow()
+            row.add(button)
+
+            val keyboard = InlineKeyboardMarkup.builder()
+                .keyboard(listOf(row))
+                .build()
+
+            // Edit the message with success state
+            editMessage(
+                chatId = id.toLong(),
+                messageId = savingMessage.messageId,
+                newText = "Saved ✅",
+                telegramClient = telegramClient,
+                replyKeyboardMarkup = keyboard
+            )
             sendLog(createLogMessageForSuccessSave(responseBody, id, url), telegramClient)
         } else {
-            if (responseBody.contains("429")) {
-                sendText(id.toLong(), "Saving failed :( Limit for today has been reached", telegramClient)
+            // Edit the message with error state
+            val errorText = if (responseBody.contains("429")) {
+                "Saving failed :( Limit of 10 articles per day has been reached. Need more articles? Simply write 'no limit' in the chat below"
             } else {
-                sendText(
-                    id.toLong(),
-                    "Saving failed :( We're aware of this issue and working on it 💫",
-                    telegramClient
-                )
+                "Saving failed :( We're aware of this issue and working on it 💫"
             }
+            editMessage(
+                chatId = id.toLong(),
+                messageId = savingMessage.messageId,
+                newText = errorText,
+                telegramClient = telegramClient
+            )
             sendLog(createLogMessageForParserError(responseBody, id, url, response.code), telegramClient)
         }
     }
 }
 
 private fun createLogMessageForParserError(response: String, id: String, url: String, code: Int): String {
-    return "UserId: $id \n" +
-            "Action: parser error\nTime: ${System.currentTimeMillis()}\n" +
-            "Url: $url \n" +
-            "Error: $response \n" +
-            "response.code(): $code"
+    return """
+        User ID: $id
+        Name: -
+        Action: parser_error
+        Data: URL: $url, Error: $response, Code: $code
+    """.trimIndent()
 }
 
 private fun createLogMessageForSuccessSave(response: String, id: String, url: String): String {
-    return "UserId: $id \n" +
-            "Action: parser success\nTime: ${System.currentTimeMillis()}\n" +
-            "Url: $url \n" +
-            "Response: $response"
+    return """
+        User ID: $id
+        Name: -
+        Action: parser_success
+        Data: $url
+    """.trimIndent()
 }
 
 fun sendLog(
@@ -114,10 +189,24 @@ fun sendLog(
     telegramClient: OkHttpTelegramClient,
     disableWebPagePreview: Boolean = true,
 ) {
+    val environment = System.getenv("TELEGRAM_BOT_ENVIRONMENT") ?: "test"
+    if (environment != "prod") {
+        return
+    }
+
+    val timestamp = java.time.Instant.ofEpochMilli(System.currentTimeMillis())
+        .atZone(java.time.ZoneOffset.UTC)
+        .format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS"))
+    
+    val messageWithTimestamp = """
+        Timestamp: $timestamp UTC
+$message
+    """.trimIndent()
+
     val sendMessageBuilder = SendMessage.builder()
         .chatId(-1002328089278)
         .messageThreadId(552)
-        .text(message)
+        .text(messageWithTimestamp)
         .disableWebPagePreview(disableWebPagePreview)
 
     val sendMessage = sendMessageBuilder.build()
