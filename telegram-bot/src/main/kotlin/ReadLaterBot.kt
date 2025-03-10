@@ -42,7 +42,7 @@ class ReadLaterBot : LongPollingSingleThreadUpdateConsumer {
 
         if (message != null && message.text.isNullOrBlank().not() && isValidUrl(message.text)) {
             sendLog(createLogMessageForLink(message), telegramClient)
-            sendToParser(message.text, fromId.toString(), telegramClient)
+            sendToParser(message, telegramClient)
         } else {
             sendLog(createLogMessageForNotALink(message), telegramClient)
             sendText(fromId, "It's not a link to save, but we got your message! If it's a feedback, we appreciate it 💌", telegramClient)

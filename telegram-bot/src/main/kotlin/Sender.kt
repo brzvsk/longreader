@@ -22,7 +22,8 @@ fun sendText(
     telegramClient: OkHttpTelegramClient,
     replyKeyboardMarkup: InlineKeyboardMarkup? = null,
     disableWebPagePreview: Boolean = true,
-    parseMode: String? = null
+    parseMode: String? = null,
+    replyToMessageId: Int? = null
 ): Message {
     val sendMessageBuilder = SendMessage.builder()
         .chatId(id.toString())
@@ -34,6 +35,9 @@ fun sendText(
     }
     if (parseMode != null) {
         sendMessageBuilder.parseMode(parseMode)
+    }
+    if (replyToMessageId != null) {
+        sendMessageBuilder.replyToMessageId(replyToMessageId)
     }
     val sendMessage = sendMessageBuilder.build()
 
@@ -74,9 +78,17 @@ fun editMessage(
     }
 }
 
-fun sendToParser(url: String, id: String, telegramClient: OkHttpTelegramClient) {
-    // Send initial "Saving..." message
-    val savingMessage = sendText(id.toLong(), "Saving...", telegramClient)
+fun sendToParser(message: Message, telegramClient: OkHttpTelegramClient) {
+    val url = message.text
+    val id = message.from.id.toString()
+
+    // Send initial "Saving..." message as a reply
+    val savingMessage = sendText(
+        id.toLong(), 
+        "Saving...", 
+        telegramClient,
+        replyToMessageId = message.messageId
+    )
 
     val client = OkHttpClient()
 
