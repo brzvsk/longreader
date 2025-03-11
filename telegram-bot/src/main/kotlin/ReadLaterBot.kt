@@ -41,10 +41,22 @@ class ReadLaterBot : LongPollingSingleThreadUpdateConsumer {
         val fromId = message.from.id
 
         if (message != null && message.text.isNullOrBlank().not() && isValidUrl(message.text)) {
-            sendLog(createLogMessageForLink(message), telegramClient)
+            trackEvent(
+                userId = message.from.id.toString(),
+                action = "link_sent_to_parser",
+                data = mapOf("url" to message.text),
+                userName = "${message.from.firstName} ${message.from.lastName}",
+                telegramClient = telegramClient
+            )
             sendToParser(message, telegramClient)
         } else {
-            sendLog(createLogMessageForNotALink(message), telegramClient)
+            trackEvent(
+                userId = message.from.id.toString(),
+                action = "not_a_link",
+                data = message.text ?: "-",
+                userName = "${message.from.firstName} ${message.from.lastName}",
+                telegramClient = telegramClient
+            )
             sendText(fromId, "It's not a link to save, but we got your message! If it's a feedback, we appreciate it 💌", telegramClient)
         }
     }
@@ -64,39 +76,30 @@ class ReadLaterBot : LongPollingSingleThreadUpdateConsumer {
 
     private fun handleCommand(message: Message) {
         val fromId = message.from.id
-        when (message.text) {
-            "/start" -> {
-                sendLog(createLogMessageForStart(message), telegramClient)
+        when {
+            message.text?.startsWith("/start") == true -> {
+                val startParam = message.text?.substringAfter(" ", "")?.takeIf { it.isNotEmpty() }
+                val startType = when {
+                    message.chat.isGroupChat || message.chat.isSuperGroupChat -> "group"
+                    message.webAppData != null -> "webapp"
+                    startParam?.startsWith("article_") == true -> "article_share"
+                    else -> "direct"
+                }
+                
+                trackEvent(
+                    userId = message.from.id.toString(),
+                    action = "start",
+                    data = mapOf(
+                        "start_param" to (startParam ?: ""),
+                        "start_type" to startType,
+                        "chat_type" to message.chat.type
+                    ),
+                    userName = "${message.from.firstName} ${message.from.lastName}",
+                    telegramClient = telegramClient
+                )
                 sendText(fromId, startMessage, telegramClient, parseMode = "HTML")
             }
-            "/help" -> sendText(fromId, startMessage, telegramClient, parseMode = "HTML")
+            message.text == "/help" -> sendText(fromId, startMessage, telegramClient, parseMode = "HTML")
         }
-    }
-
-    private fun createLogMessageForStart(message: Message) : String {
-        return """
-            User ID: ${message.from.id}
-            Name: ${message.from.firstName} ${message.from.lastName}
-            Action: start
-            Data: -
-        """.trimIndent()
-    }
-
-    private fun createLogMessageForNotALink(message: Message) : String {
-        return """
-            User ID: ${message.from.id}
-            Name: ${message.from.firstName} ${message.from.lastName}
-            Action: not_a_link
-            Data: ${message.text ?: "-"}
-        """.trimIndent()
-    }
-
-    private fun createLogMessageForLink(message: Message) : String {
-        return """
-            User ID: ${message.from.id}
-            Name: ${message.from.firstName} ${message.from.lastName}
-            Action: link_sent_to_parser
-            Data: {"url": "${message.text ?: "-"}"}
-        """.trimIndent()
     }
 }
