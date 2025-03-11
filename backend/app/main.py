@@ -28,6 +28,7 @@ from .services.auth_service import authenticate_telegram_user
 from .database import create_indexes
 from .services.parser_service import ParserService
 from .services.user_service import get_user_by_telegram_id, get_user_by_id, get_or_create_by_telegram_id
+from .services.analytics_service import analytics
 from pydantic import BaseModel
 
 # Configure logging
@@ -97,19 +98,64 @@ async def root():
     }
 
 @app.get("/users/{user_id}/articles", response_model=UserArticleFlatCollection)
-async def get_articles_for_user(user_id: str):
+async def get_articles_for_user(user_id: str, background_tasks: BackgroundTasks):
     """Get all articles saved by a specific user in a flattened structure (without content)"""
-    return await get_user_articles_flat(user_id)
+    articles = await get_user_articles_flat(user_id)
+    
+    # Get user's telegram_id for analytics
+    user = await get_user_by_id(user_id)
+    if user and user.telegram_id:
+        background_tasks.add_task(
+            analytics.track_event,
+            user_id=str(user.telegram_id),
+            action="articles_list_viewed",
+            data={"count": len(articles.articles)},
+            source="backend"
+        )
+    
+    return articles
 
 @app.get("/users/{user_id}/articles/{article_id}", response_model=UserArticleFlat)
-async def get_user_article(user_id: str, article_id: str):
+async def get_user_article(user_id: str, article_id: str, background_tasks: BackgroundTasks):
     """Get a specific article saved by the user in a flattened structure (includes content)"""
-    return await get_user_article_flat(user_id, article_id)
+    article = await get_user_article_flat(user_id, article_id)
+    
+    # If article has no saved_at timestamp, it means it's being viewed through a share link
+    is_shared_view = not article.timestamps.saved_at
+    
+    # Get user's telegram_id for analytics
+    user = await get_user_by_id(user_id)
+    if user and user.telegram_id:
+        background_tasks.add_task(
+            analytics.track_event,
+            user_id=str(user.telegram_id),
+            action="article_opened",
+            data={
+                "article_id": article_id,
+                "shared": is_shared_view
+            },
+            source="backend"
+        )
+    
+    return article
 
 @app.post("/users/{user_id}/articles/{article_id}/save", response_model=UserArticle)
-async def save_article(user_id: str, article_id: str):
+async def save_article(user_id: str, article_id: str, background_tasks: BackgroundTasks):
     """Save or restore an article for a user"""
-    return await save_article_for_user(user_id, article_id)
+    article = await save_article_for_user(user_id, article_id)
+    
+    # Get user's telegram_id for analytics
+    user = await get_user_by_id(user_id)
+    if user and user.telegram_id:
+        background_tasks.add_task(
+            analytics.track_event,
+            user_id=str(user.telegram_id),
+            action="article_saved",
+            data={"article_id": article_id},
+            source="backend"
+            )
+    
+    return article
 
 @app.put("/users/{user_id}/articles/{article_id}/progress", response_model=UserArticle)
 async def update_progress(user_id: str, article_id: str, progress_percentage: float):
@@ -166,10 +212,20 @@ async def parse_article(user_id: str, request: ParseArticleRequest):
         )
 
 @app.post("/users/{user_id}/articles/{article_id}/share")
-async def create_article_share(user_id: str, article_id: str):
+async def create_article_share(user_id: str, article_id: str, background_tasks: BackgroundTasks):
     """Create a prepared inline message for sharing an article via Telegram"""
     user = await get_user_by_id(user_id)
     if not user or not user.telegram_id:
         raise HTTPException(status_code=404, detail="User not found or Telegram ID not available")
+    
     message_id = await create_share_message(article_id, user.telegram_id)
+    
+    background_tasks.add_task(
+        analytics.track_event,
+        user_id=str(user.telegram_id),
+        action="article_share_requested",
+        data={"article_id": article_id},
+        source="backend"
+    )
+    
     return {"message_id": message_id}

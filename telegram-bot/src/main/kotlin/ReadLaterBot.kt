@@ -96,7 +96,7 @@ class ReadLaterBot : LongPollingSingleThreadUpdateConsumer {
             User ID: ${message.from.id}
             Name: ${message.from.firstName} ${message.from.lastName}
             Action: link_sent_to_parser
-            Data: ${message.text ?: "-"}
+            Data: {"url": "${message.text ?: "-"}"}
         """.trimIndent()
     }
 }

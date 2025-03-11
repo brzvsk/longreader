@@ -171,7 +171,7 @@ private fun createLogMessageForParserError(response: String, id: String, url: St
         User ID: $id
         Name: -
         Action: parser_error
-        Data: URL: $url, Error: $response, Code: $code
+        Data: {"url": "$url", "error": "$response", "code": $code}
     """.trimIndent()
 }
 
@@ -180,7 +180,7 @@ private fun createLogMessageForSuccessSave(response: String, id: String, url: St
         User ID: $id
         Name: -
         Action: parser_success
-        Data: $url
+        Data: {"url": "$url"}
     """.trimIndent()
 }
 
@@ -201,6 +201,7 @@ fun sendLog(
     val messageWithTimestamp = """
         Timestamp: $timestamp UTC
 $message
+Source: telegram-bot
     """.trimIndent()
 
     val sendMessageBuilder = SendMessage.builder()
