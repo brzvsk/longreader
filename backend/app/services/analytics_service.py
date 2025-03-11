@@ -5,6 +5,9 @@ from datetime import datetime
 import aiohttp
 from typing import Any, Optional
 
+from ..database import events
+from ..models.event import Event
+
 logger = logging.getLogger(__name__)
 
 class AnalyticsService:
@@ -23,20 +26,38 @@ class AnalyticsService:
         source: str = '(not set)'
     ) -> None:
         """
-        Track an analytics event by sending it to Telegram chat
+        Track an analytics event by storing in MongoDB and optionally sending to Telegram chat
         """
+        timestamp = datetime.utcnow()
+        
+        # Store event in MongoDB
+        try:
+            event = Event(
+                user_id=user_id,
+                action=action,
+                data=data,
+                user_name=user_name,
+                source=source,
+                timestamp=timestamp
+            )
+            await events.insert_one(event.model_dump(by_alias=True))
+            logger.debug(f"Successfully stored event in MongoDB: {action}")
+        except Exception as e:
+            logger.error(f"Error storing event in MongoDB: {str(e)}")
+            return
+
+        # Skip Telegram sending in test environment
         if self.environment != "prod":
-            logger.debug(f"Skipping analytics in {self.environment} environment")
+            logger.debug(f"Skipping Telegram sending in {self.environment} environment")
             return
 
         if not self.bot_token:
             logger.error("TELEGRAM_BOT_TOKEN not configured")
             return
-
-        timestamp = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
         
+        # Format message for Telegram
         message = f"""
-Timestamp: {timestamp} UTC
+Timestamp: {timestamp.strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]} UTC
 User ID: {user_id}
 Name: {user_name or '-'}
 Action: {action}
@@ -44,6 +65,7 @@ Data: {json.dumps(data) if isinstance(data, (dict, list)) else str(data)}
 Source: {source}
         """.strip()
 
+        # Send to Telegram
         try:
             async with aiohttp.ClientSession() as session:
                 url = f"https://api.telegram.org/bot{self.bot_token}/sendMessage"
@@ -57,12 +79,12 @@ Source: {source}
                 async with session.post(url, json=data) as response:
                     if response.status != 200:
                         response_text = await response.text()
-                        logger.error(f"Failed to send analytics event. Status: {response.status}, Response: {response_text}")
+                        logger.error(f"Failed to send analytics event to Telegram. Status: {response.status}, Response: {response_text}")
                     else:
-                        logger.debug(f"Successfully sent analytics event: {action}")
+                        logger.debug(f"Successfully sent analytics event to Telegram: {action}")
                         
         except Exception as e:
-            logger.error(f"Error sending analytics event: {str(e)}")
+            logger.error(f"Error sending analytics event to Telegram: {str(e)}")
 
 # Create a global instance
 analytics = AnalyticsService() 
