@@ -14,6 +14,7 @@ db = client.get_database(DATABASE_NAME)
 articles = db.get_collection("articles")
 user_articles = db.get_collection("user_articles")
 users = db.get_collection("users")
+events = db.get_collection("events")
 
 # Indexes setup
 async def create_indexes():
@@ -28,3 +29,8 @@ async def create_indexes():
     # Create indexes for users collection
     await users.create_index("telegram_id", unique=True)
     await users.create_index("metadata.registered_at")
+    
+    # Create indexes for events collection
+    await events.create_index("timestamp")
+    await events.create_index("user_id")
+    await events.create_index("action")

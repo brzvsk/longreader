@@ -7,12 +7,14 @@ import os
 from datetime import datetime
 from bson import ObjectId
 from dotenv import load_dotenv
+from typing import List, Optional, Any
 
 # Load environment variables from .env file
 load_dotenv()
 
 from .models.article import UserArticle, UserArticleFlat, UserArticleFlatCollection
 from .models.auth import AuthResponse, TelegramAuthRequest
+from .models.event import Event
 from .services.article_service import (
     get_user_articles_flat,
     get_user_article_flat,
@@ -25,7 +27,7 @@ from .services.article_service import (
     check_user_article_status
 )
 from .services.auth_service import authenticate_telegram_user
-from .database import create_indexes
+from .database import create_indexes, events
 from .services.parser_service import ParserService
 from .services.user_service import get_user_by_telegram_id, get_user_by_id, get_or_create_by_telegram_id
 from .services.analytics_service import analytics
@@ -200,6 +202,13 @@ async def telegram_auth(auth_data: TelegramAuthRequest):
 class ParseArticleRequest(BaseModel):
     url: str
 
+class CreateEventRequest(BaseModel):
+    user_id: str
+    action: str
+    data: Any
+    user_name: Optional[str] = None
+    source: str = '(not set)'
+
 @app.post("/users/{user_id}/articles/parse", response_model=dict)
 async def parse_article(user_id: str, request: ParseArticleRequest):
     """Parse article and create user-article link"""
@@ -229,3 +238,18 @@ async def create_article_share(user_id: str, article_id: str, background_tasks: 
     )
     
     return {"message_id": message_id}
+
+@app.post("/analytics/events", status_code=200)
+async def create_event(
+    background_tasks: BackgroundTasks,
+    request: CreateEventRequest
+):
+    """Create an analytics event"""
+    background_tasks.add_task(
+        analytics.track_event,
+        user_id=request.user_id,
+        action=request.action,
+        data=request.data,
+        user_name=request.user_name,
+        source=request.source
+    )
