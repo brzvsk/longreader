@@ -29,7 +29,15 @@ export function TelegramProvider({ children }: { children: React.ReactNode }) {
 
     // Then expand the webapp to full height
     webApp.expand()
+
+    // Initialize Telegram Analytics
+    import('@telegram-apps/analytics').then((TelegramAnalytics) => {
+      TelegramAnalytics.default.init({
+        token: process.env.NEXT_PUBLIC_TELEGRAM_ANALYTICS_TOKEN || 'eyJhcHBfbmFtZSI6ImxvbmdyZWFkZXIiLCJhcHBfdXJsIjoiaHR0cHM6Ly90Lm1lL1JlYWRXYXRjaExhdGVyQm90IiwiYXBwX2RvbWFpbiI6Imh0dHBzOi8vbG9uZ3JlYWRlci5icnp2LnNrLyJ9!UX4UK+tLn6YLA0F6xYotLumBc7RuMKeXt3Qzr0DxeKI=',
+        appName: 'longreader',
+      });
+    });
   }, [])
 
   return <>{children}</>
-} 
+}
