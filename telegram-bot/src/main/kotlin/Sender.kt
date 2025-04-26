@@ -116,10 +116,18 @@ fun sendToParser(message: Message, telegramClient: OkHttpTelegramClient) {
             val articleResponse = gson.fromJson(responseBody, ArticleResponse::class.java)
             val botUsername = System.getenv("TELEGRAM_BOT_USERNAME") ?: "ReadWatchLaterBot"
             val appName = System.getenv("TELEGRAM_APP_NAME") ?: "LongreaderApp"
-            val articleUrl = "https://t.me/$botUsername/$appName?startapp=article_${articleResponse.article_id}"
+            val (articleUrl, buttonText, newText) = if (articleResponse.type == "bookmark") {
+                Triple(articleResponse.url, "Open link 🔗", "Website can't be parsed. Saved as bookmark ✅")
+            } else {
+                Triple(
+                    "https://t.me/$botUsername/$appName?startapp=article_${articleResponse.article_id}",
+                    "Read now 📚",
+                    "Saved as article ✅"
+                )
+            }
 
             val button = InlineKeyboardButton.builder()
-                .text("Read now 📚")
+                .text(buttonText)
                 .url(articleUrl)
                 .build()
 
@@ -133,7 +141,7 @@ fun sendToParser(message: Message, telegramClient: OkHttpTelegramClient) {
             editMessage(
                 chatId = id.toLong(),
                 messageId = savingMessage.messageId,
-                newText = "Saved ✅",
+                newText = newText,
                 telegramClient = telegramClient,
                 replyKeyboardMarkup = keyboard
             )

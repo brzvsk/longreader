@@ -621,6 +621,7 @@ class ParserService:
         Raises:
             HTTPException: If there's an error fetching or parsing the content
         """
+        article_type = "article"
         try:
             # First check if article already exists
             existing_article = await articles.find_one({"metadata.source_url": url})
@@ -629,6 +630,7 @@ class ParserService:
             if existing_article:
                 logger.info(f"Found existing article for URL: {url}")
                 article_id = existing_article["_id"]
+                article_type = existing_article.get("type", "article")
             else:
                 logger.info(f"No existing article found for URL: {url}, proceeding with parsing")
                 try:
@@ -643,22 +645,26 @@ class ParserService:
                     description, article_metadata = ParserService._extract_metadata(downloaded, content, title, url)
                     
                     # Create and save article
+                    article_type = "article"
                     article = Article(
                         title=title,
                         content=content,
                         short_description=description,
                         metadata=article_metadata,
-                        type="article"
+                        type=article_type
                     )
                     article_dict = article.model_dump(by_alias=True, exclude={"id"})
+                    
                 except Exception as e:
                     logger.error(f"Parser failed for URL: {url}, storing minimal article. Error: {str(e)}")
                     # Store only source_url and created_at, and set type to 'bookmark'
+                    article_type = "bookmark"
                     article_dict = {
                         "metadata": {"source_url": url},
                         "created_at": datetime.utcnow(),
-                        "type": "bookmark"
+                        "type": article_type
                     }
+                    
                 result = await articles.insert_one(article_dict)
                 article_id = result.inserted_id
                 
@@ -690,7 +696,8 @@ class ParserService:
             
             return {
                 "article_id": str(article_id),
-                "user_article_id": str(user_article_id)
+                "user_article_id": str(user_article_id),
+                "type": article_type,
             }
         
         except HTTPException:
@@ -751,7 +758,8 @@ class ParserService:
             return {
                 "article_id": result["article_id"],
                 "user_article_id": result["user_article_id"],
-                "url": url
+                "url": url,
+                "type": result["type"]
             }
             
         except HTTPException:
