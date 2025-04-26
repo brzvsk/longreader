@@ -146,7 +146,7 @@ fun sendToParser(message: Message, telegramClient: OkHttpTelegramClient) {
             )
         } else {
             val errorText = if (responseBody.contains("429")) {
-                "Saving failed :( Limit of 10 articles per day has been reached. Need more articles? Simply write 'no limit' in the chat below"
+                "Saving failed :( Limit of 30 articles per day has been reached. Need more articles? Simply write 'no limit' in the chat below. We'll adjust the limit in couple of hours."
             } else {
                 "Saving failed :( We're aware of this issue and working on it 💫"
             }
