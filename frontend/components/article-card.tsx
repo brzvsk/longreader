@@ -104,7 +104,9 @@ export function ArticleCard({ article, onArchive, onUnarchive, onProgressUpdate,
           <div className="flex gap-6">
             <div className="flex-1">
               <h2 className="text-xl font-bold line-clamp-2 mb-2 font-sans" style={{ color: 'var(--tg-text-color)' }}>
-                {article.title || getHumanReadablePath(article.metadata.source_url)}
+                {article.title
+                  ? article.title
+                  : `🔗 ${getHumanReadablePath(article.metadata.source_url)}`}
               </h2>
               <p className="text-base line-clamp-3" style={{ color: 'var(--tg-text-color)' }}>
                 {article.short_description}
