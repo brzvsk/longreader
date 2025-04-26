@@ -27,6 +27,24 @@ function getDomainFromUrl(url: string): string {
   }
 }
 
+function getHumanReadablePath(url: string): string {
+  try {
+    const { pathname } = new URL(url);
+    // Remove leading/trailing slashes and split by '/'
+    const segments = pathname.replace(/^\/+|\/+$/g, '').split('/');
+    // Split by '-' and remove file extensions, capitalize words
+    const words = segments.flatMap(segment =>
+      segment
+        .replace(/\.[^/.]+$/, '') // remove file extension
+        .split('-')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    );
+    return words.join(' ');
+  } catch {
+    return url;
+  }
+}
+
 export function ArticleCard({ article, onArchive, onUnarchive, onProgressUpdate, onDelete }: ArticleCardProps) {
   const sourceName = getDomainFromUrl(article.metadata.source_url)
   const [progress, setProgress] = useState(article.progress.percentage)
@@ -86,7 +104,7 @@ export function ArticleCard({ article, onArchive, onUnarchive, onProgressUpdate,
           <div className="flex gap-6">
             <div className="flex-1">
               <h2 className="text-xl font-bold line-clamp-2 mb-2 font-sans" style={{ color: 'var(--tg-text-color)' }}>
-                {article.title}
+                {article.title || getHumanReadablePath(article.metadata.source_url)}
               </h2>
               <p className="text-base line-clamp-3" style={{ color: 'var(--tg-text-color)' }}>
                 {article.short_description}
@@ -95,28 +113,33 @@ export function ArticleCard({ article, onArchive, onUnarchive, onProgressUpdate,
           </div>
           
           {/* Footer Section */}
-          <div className="flex items-center justify-between text-sm">
-            <div className="flex items-center gap-2">
-              <div className="flex items-center gap-1 text-xs" style={{ color: 'var(--tg-hint-color)' }}>
-                {article.metadata.reading_time} min read
+          {(article.metadata.reading_time || progress > 0) && (
+            <div className="flex items-center justify-between text-sm">
+              <div className="flex items-center gap-2">
+                {/* Only show reading time if it exists */}
+                {article.metadata.reading_time ? (
+                  <div className="flex items-center gap-1 text-xs" style={{ color: 'var(--tg-hint-color)' }}>
+                    {article.metadata.reading_time} min read
+                  </div>
+                ) : null}
+                {progress > 0 && (
+                  <>
+                    <span className="text-xs" style={{ color: 'var(--tg-hint-color)' }}>•</span>
+                    {isCompleted ? (
+                      <span className="text-xs flex items-center gap-1.5 text-green-600 font-medium">
+                        completed
+                        <div className="flex-shrink-0 rounded-full bg-green-600/10 p-0.5">
+                          <CheckIcon className="w-3 h-3 text-green-600" />
+                        </div>
+                      </span>
+                    ) : (
+                      <span className="text-xs" style={{ color: 'var(--tg-hint-color)' }}>{progress}% complete</span>
+                    )}
+                  </>
+                )}
               </div>
-              {progress > 0 && (
-                <>
-                  <span className="text-xs" style={{ color: 'var(--tg-hint-color)' }}>•</span>
-                  {isCompleted ? (
-                    <span className="text-xs flex items-center gap-1.5 text-green-600 font-medium">
-                      completed
-                      <div className="flex-shrink-0 rounded-full bg-green-600/10 p-0.5">
-                        <CheckIcon className="w-3 h-3 text-green-600" />
-                      </div>
-                    </span>
-                  ) : (
-                    <span className="text-xs" style={{ color: 'var(--tg-hint-color)' }}>{progress}% complete</span>
-                  )}
-                </>
-              )}
             </div>
-          </div>
+          )}
         </div>
       </Link>
     </div>
