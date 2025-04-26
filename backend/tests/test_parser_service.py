@@ -303,6 +303,7 @@ class TestParserService:
             assert "user_article_id" in result
             assert isinstance(result["article_id"], str)
             assert isinstance(result["user_article_id"], str)
+            assert result["type"] == "article"
             
         finally:
             # Restore original functions
@@ -313,6 +314,49 @@ class TestParserService:
             trafilatura.metadata.extract_metadata = original_extract_metadata
             articles.find_one = original_find_one
             articles.insert_one = original_insert_one
+            user_articles.find_one = original_user_articles_find_one
+            user_articles.insert_one = original_user_articles_insert_one
+
+    @pytest.mark.asyncio
+    async def test_parse_url_minimal_bookmark_on_failure(self):
+        """Test that parse_url returns type 'bookmark' when parsing fails and minimal article is stored"""
+        original_fetch_html_content = ParserService._fetch_html_content
+        original_extract_content = ParserService._extract_content
+        original_extract_title = ParserService._extract_title
+        original_extract_metadata = ParserService._extract_metadata
+        original_articles_insert_one = articles.insert_one
+        original_articles_find_one = articles.find_one
+        original_user_articles_find_one = user_articles.find_one
+        original_user_articles_insert_one = user_articles.insert_one
+        try:
+            test_user_id = str(ObjectId())
+            # Simulate no existing article
+            async def mock_articles_find_one(*args, **kwargs):
+                return None
+            articles.find_one = mock_articles_find_one
+            # Simulate content extraction failure
+            ParserService._fetch_html_content = lambda url: "<html></html>"
+            ParserService._extract_content = lambda html: (_ for _ in ()).throw(Exception("parse fail"))
+            # Mock insert_one to return an ObjectId (async)
+            async def mock_articles_insert_one(doc):
+                return MagicMock(inserted_id=ObjectId())
+            articles.insert_one = mock_articles_insert_one
+            async def mock_user_articles_find_one(*a, **k):
+                return None
+            async def mock_user_articles_insert_one(*a, **k):
+                return MagicMock(inserted_id=ObjectId())
+            user_articles.find_one = mock_user_articles_find_one
+            user_articles.insert_one = mock_user_articles_insert_one
+            # Test parse_url
+            result = await ParserService.parse_url("https://fail.com", test_user_id)
+            assert result["type"] == "bookmark"
+        finally:
+            ParserService._fetch_html_content = original_fetch_html_content
+            ParserService._extract_content = original_extract_content
+            ParserService._extract_title = original_extract_title
+            ParserService._extract_metadata = original_extract_metadata
+            articles.insert_one = original_articles_insert_one
+            articles.find_one = original_articles_find_one
             user_articles.find_one = original_user_articles_find_one
             user_articles.insert_one = original_user_articles_insert_one
 
@@ -329,7 +373,7 @@ class TestParserService:
             # Create test ObjectId for user
             test_user_id = str(ObjectId())
             
-            # Create mock existing article
+            # Create mock existing article with type 'article'
             mock_article_id = ObjectId()
             mock_existing_article = {
                 "_id": mock_article_id,
@@ -341,7 +385,8 @@ class TestParserService:
                     "author": "Test Author",
                     "publish_date": datetime(2023, 1, 1),
                     "reading_time": 1
-                }
+                },
+                "type": "article"
             }
             
             # Mock database operations
@@ -371,6 +416,7 @@ class TestParserService:
             # Verify result structure
             assert result["article_id"] == str(mock_article_id)
             assert result["user_article_id"] == str(mock_user_article_id)
+            assert result["type"] == "article"
             
         finally:
             # Restore original functions
@@ -526,61 +572,62 @@ class TestParserService:
         """Test error handling during content extraction"""
         test_user_id = str(ObjectId())
         test_url = "https://example.com"
-        
         # Mock necessary functions
         original_fetch_html = ParserService._fetch_html_content
         original_extract_content = ParserService._extract_content
         original_find_one = articles.find_one
-        
+        original_articles_insert_one = articles.insert_one
+        original_user_articles_find_one = user_articles.find_one
+        original_user_articles_insert_one = user_articles.insert_one
         try:
             # Mock database functions to return None (no existing article)
             async def mock_find_one(*args, **kwargs):
                 return None
             articles.find_one = mock_find_one
-            
+            # Mock insert_one to return an ObjectId (async)
+            async def mock_articles_insert_one(doc):
+                return MagicMock(inserted_id=ObjectId())
+            articles.insert_one = mock_articles_insert_one
+            async def mock_user_articles_find_one(*a, **k):
+                return None
+            async def mock_user_articles_insert_one(*a, **k):
+                return MagicMock(inserted_id=ObjectId())
+            user_articles.find_one = mock_user_articles_find_one
+            user_articles.insert_one = mock_user_articles_insert_one
             # Test case 1: Empty content after extraction
             def mock_fetch_html(url):
                 return "<html><body>Some content</body></html>"
-                
             def mock_extract_content(html_content):
                 # Simulate trafilatura failing to extract content
                 raise HTTPException(
                     status_code=422,
                     detail="Could not extract content from this website. The page structure may not be supported or may require JavaScript to load content."
                 )
-                
             ParserService._fetch_html_content = mock_fetch_html
             ParserService._extract_content = mock_extract_content
-            
-            with pytest.raises(HTTPException) as exc_info:
-                await ParserService.parse_url(test_url, test_user_id)
-            assert exc_info.value.status_code == 422
-            assert "could not extract content" in str(exc_info.value.detail).lower()
-            
+            # Instead of expecting an exception, expect a minimal article with type 'bookmark'
+            result = await ParserService.parse_url(test_url, test_user_id)
+            assert result["type"] == "bookmark"
             # Test case 2: Invalid HTML content
             def mock_fetch_html_invalid(url):
                 return "Not valid HTML content"
-                
             def mock_extract_content_invalid(html_content):
                 # Simulate trafilatura failing to parse HTML
                 raise HTTPException(
                     status_code=422,
                     detail="Could not extract content from this website. The HTML content could not be loaded."
                 )
-                
             ParserService._fetch_html_content = mock_fetch_html_invalid
             ParserService._extract_content = mock_extract_content_invalid
-            
-            with pytest.raises(HTTPException) as exc_info:
-                await ParserService.parse_url(test_url, test_user_id)
-            assert exc_info.value.status_code == 422
-            assert "could not extract content" in str(exc_info.value.detail).lower()
-            
+            result = await ParserService.parse_url(test_url, test_user_id)
+            assert result["type"] == "bookmark"
         finally:
-            # Restore original functions
             ParserService._fetch_html_content = original_fetch_html
             ParserService._extract_content = original_extract_content
             articles.find_one = original_find_one
+            articles.insert_one = original_articles_insert_one
+            user_articles.find_one = original_user_articles_find_one
+            user_articles.insert_one = original_user_articles_insert_one
 
     @pytest.mark.asyncio
     async def test_error_handling_database_operations(self):
@@ -645,3 +692,37 @@ class TestParserService:
             articles.insert_one = original_articles_insert_one
             ParserService._fetch_html_content = original_fetch_html
             get_or_create_by_telegram_id = original_get_user 
+
+    @pytest.mark.asyncio
+    async def test_handle_parse_request_returns_type(self):
+        """Test that handle_parse_request returns the correct type field from parse_url result"""
+        original_parse_url = ParserService.parse_url
+        original_check_daily_article_limit = ParserService._check_daily_article_limit
+        with patch("app.services.parser_service.get_or_create_by_telegram_id") as mock_get_user:
+            test_user_id = str(ObjectId())
+            # Mock user
+            class MockUser:
+                def __init__(self):
+                    self.id = test_user_id
+            async def mock_get_user_func(uid):
+                return MockUser()
+            mock_get_user.side_effect = mock_get_user_func
+            # Mock daily limit check
+            async def mock_check_limit(uid):
+                return None
+            # Mock parse_url to return type 'article'
+            async def mock_parse_url(url, user_id):
+                return {"article_id": "aid", "user_article_id": "uaid", "type": "article"}
+            ParserService.parse_url = mock_parse_url
+            ParserService._check_daily_article_limit = mock_check_limit
+            # Test handle_parse_request
+            result = await ParserService.handle_parse_request("https://example.com", test_user_id)
+            assert result["type"] == "article"
+            # Mock parse_url to return type 'bookmark'
+            async def mock_parse_url_bm(url, user_id):
+                return {"article_id": "aid", "user_article_id": "uaid", "type": "bookmark"}
+            ParserService.parse_url = mock_parse_url_bm
+            result = await ParserService.handle_parse_request("https://fail.com", test_user_id)
+            assert result["type"] == "bookmark"
+        ParserService.parse_url = original_parse_url
+        ParserService._check_daily_article_limit = original_check_daily_article_limit 

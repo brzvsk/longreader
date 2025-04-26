@@ -61,7 +61,7 @@ def save_test_results(url: str, saved_article: dict):
         json.dump(saved_article, f, default=json_util.default, ensure_ascii=False, indent=2)
 
 @pytest.mark.real_http
-@pytest.mark.asyncio(scope="module")
+@pytest.mark.asyncio
 @pytest.mark.parametrize("url", REAL_TEST_URLS)
 async def test_fetch_real_html(url):
     """
@@ -99,7 +99,7 @@ async def test_fetch_real_html(url):
         pytest.fail(f"Failed to parse {url}: {str(e)}")
 
 @pytest.mark.real_http
-@pytest.mark.asyncio(scope="module")
+@pytest.mark.asyncio
 async def test_error_handling_invalid_url():
     """Test error handling with an invalid URL."""
     invalid_url = "https://this-domain-does-not-exist-12345.com"
@@ -110,7 +110,7 @@ async def test_error_handling_invalid_url():
     logger.info("Successfully caught exception for invalid URL")
 
 @pytest.mark.real_http
-@pytest.mark.asyncio(scope="module")
+@pytest.mark.asyncio
 async def test_error_handling_non_html_url():
     """Test error handling with a URL that doesn't return HTML."""
     non_html_url = "https://api.github.com"
