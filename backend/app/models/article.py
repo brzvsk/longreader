@@ -15,9 +15,9 @@ class ArticleMetadata(BaseModel):
 
 class Article(BaseModel):
     id: Optional[PyObjectId] = Field(alias="_id", default=None)
-    title: str = Field(...)
+    title: Optional[str] = None
     content: Optional[str] = None
-    short_description: str = Field(...)
+    short_description: Optional[str] = None
     metadata: ArticleMetadata = Field(...)
     created_at: datetime = Field(default_factory=datetime.utcnow)
     model_config = ConfigDict(
@@ -55,9 +55,9 @@ class FlattenedTimestamps(BaseModel):
 
 class UserArticleFlat(BaseModel):
     id: Optional[PyObjectId] = Field(alias="_id")
-    title: str
+    title: Optional[str] = None
     content: Optional[str] = None
-    short_description: str
+    short_description: Optional[str] = None
     metadata: ArticleMetadata
     progress: UserArticleProgress
     timestamps: FlattenedTimestamps

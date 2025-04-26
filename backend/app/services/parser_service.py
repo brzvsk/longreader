@@ -631,29 +631,37 @@ class ParserService:
                 article_id = existing_article["_id"]
             else:
                 logger.info(f"No existing article found for URL: {url}, proceeding with parsing")
-                # Fetch and parse article
-                html_content = ParserService._fetch_html_content(url)
-                html_content = ParserService._preprocess_html_content(html_content)
-                downloaded, content = ParserService._extract_content(html_content)
-                
-                # Extract and process article data
-                title = ParserService._extract_title(downloaded, html_content)
-                content = ParserService._post_process_content(content, title)
-                description, article_metadata = ParserService._extract_metadata(downloaded, content, title, url)
-                
-                # Create and save article
-                article = Article(
-                    title=title,
-                    content=content,
-                    short_description=description,
-                    metadata=article_metadata
-                )
-                article_dict = article.model_dump(by_alias=True, exclude={"id"})
+                try:
+                    # Fetch and parse article
+                    html_content = ParserService._fetch_html_content(url)
+                    html_content = ParserService._preprocess_html_content(html_content)
+                    downloaded, content = ParserService._extract_content(html_content)
+                    
+                    # Extract and process article data
+                    title = ParserService._extract_title(downloaded, html_content)
+                    content = ParserService._post_process_content(content, title)
+                    description, article_metadata = ParserService._extract_metadata(downloaded, content, title, url)
+                    
+                    # Create and save article
+                    article = Article(
+                        title=title,
+                        content=content,
+                        short_description=description,
+                        metadata=article_metadata
+                    )
+                    article_dict = article.model_dump(by_alias=True, exclude={"id"})
+                except Exception as e:
+                    logger.error(f"Parser failed for URL: {url}, storing minimal article. Error: {str(e)}")
+                    # Store only source_url and created_at
+                    article_dict = {
+                        "metadata": {"source_url": url},
+                        "created_at": datetime.utcnow()
+                    }
                 result = await articles.insert_one(article_dict)
                 article_id = result.inserted_id
                 
-                # Save local files if in development environment
-                if ParserService.IS_DEV_ENVIRONMENT:
+                # Save local files if in development environment and parsing succeeded
+                if ParserService.IS_DEV_ENVIRONMENT and 'article' in locals():
                     ParserService._save_html_file(html_content, article, str(article_id))
                     ParserService._save_markdown_file(article, str(article_id))
             
@@ -682,7 +690,7 @@ class ParserService:
                 "article_id": str(article_id),
                 "user_article_id": str(user_article_id)
             }
-            
+        
         except HTTPException:
             raise
         except Exception as e:
