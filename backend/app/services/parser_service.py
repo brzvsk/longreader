@@ -647,15 +647,17 @@ class ParserService:
                         title=title,
                         content=content,
                         short_description=description,
-                        metadata=article_metadata
+                        metadata=article_metadata,
+                        type="article"
                     )
                     article_dict = article.model_dump(by_alias=True, exclude={"id"})
                 except Exception as e:
                     logger.error(f"Parser failed for URL: {url}, storing minimal article. Error: {str(e)}")
-                    # Store only source_url and created_at
+                    # Store only source_url and created_at, and set type to 'bookmark'
                     article_dict = {
                         "metadata": {"source_url": url},
-                        "created_at": datetime.utcnow()
+                        "created_at": datetime.utcnow(),
+                        "type": "bookmark"
                     }
                 result = await articles.insert_one(article_dict)
                 article_id = result.inserted_id

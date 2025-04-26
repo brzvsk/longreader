@@ -26,6 +26,7 @@ export interface Article {
   progress: ArticleProgress;
   timestamps: ArticleTimestamps;
   status: Array<'new' | 'saved' | 'deleted'>;
+  type?: 'article' | 'bookmark';
 }
 
 export interface ArticleContent extends Article {

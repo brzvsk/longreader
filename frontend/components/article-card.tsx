@@ -96,54 +96,81 @@ export function ArticleCard({ article, onArchive, onUnarchive, onProgressUpdate,
       </div>
 
       {/* Main Content */}
-      <Link 
-        href={`/article/${article._id}`} 
-        className="block"
-      >
-        <div className="flex flex-col gap-4">
-          <div className="flex gap-6">
-            <div className="flex-1">
-              <h2 className="text-xl font-bold line-clamp-2 mb-2 font-sans" style={{ color: 'var(--tg-text-color)' }}>
-                {article.title
-                  ? article.title
-                  : `🔗 ${getHumanReadablePath(article.metadata.source_url)}`}
-              </h2>
-              <p className="text-base line-clamp-3" style={{ color: 'var(--tg-text-color)' }}>
-                {article.short_description}
-              </p>
-            </div>
-          </div>
-          
-          {/* Footer Section */}
-          {(article.metadata.reading_time || progress > 0) && (
-            <div className="flex items-center justify-between text-sm">
-              <div className="flex items-center gap-2">
-                {/* Only show reading time if it exists */}
-                {article.metadata.reading_time ? (
-                  <div className="flex items-center gap-1 text-xs" style={{ color: 'var(--tg-hint-color)' }}>
-                    {article.metadata.reading_time} min read
-                  </div>
-                ) : null}
-                {progress > 0 && (
-                  <>
-                    <span className="text-xs" style={{ color: 'var(--tg-hint-color)' }}>•</span>
-                    {isCompleted ? (
-                      <span className="text-xs flex items-center gap-1.5 text-green-600 font-medium">
-                        completed
-                        <div className="flex-shrink-0 rounded-full bg-green-600/10 p-0.5">
-                          <CheckIcon className="w-3 h-3 text-green-600" />
-                        </div>
-                      </span>
-                    ) : (
-                      <span className="text-xs" style={{ color: 'var(--tg-hint-color)' }}>{progress}% complete</span>
-                    )}
-                  </>
-                )}
+      {article.type === 'bookmark' ? (
+        <a
+          href={article.metadata.source_url}
+          className="block"
+          onClick={e => {
+            e.preventDefault();
+            if (article.metadata.source_url) {
+              window.open(article.metadata.source_url, '_blank');
+            }
+          }}
+        >
+          <div className="flex flex-col gap-4">
+            <div className="flex gap-6">
+              <div className="flex-1">
+                <h2 className="text-xl font-bold line-clamp-2 mb-2 font-sans" style={{ color: 'var(--tg-text-color)' }}>
+                  {article.title
+                    ? article.title
+                    : `🔗 ${getHumanReadablePath(article.metadata.source_url)}`}
+                </h2>
+                <p className="text-base line-clamp-3" style={{ color: 'var(--tg-text-color)' }}>
+                  {article.short_description}
+                </p>
               </div>
             </div>
-          )}
-        </div>
-      </Link>
+          </div>
+        </a>
+      ) : (
+        <Link 
+          href={`/article/${article._id}`} 
+          className="block"
+        >
+          <div className="flex flex-col gap-4">
+            <div className="flex gap-6">
+              <div className="flex-1">
+                <h2 className="text-xl font-bold line-clamp-2 mb-2 font-sans" style={{ color: 'var(--tg-text-color)' }}>
+                  {article.title
+                    ? article.title
+                    : `🔗 ${getHumanReadablePath(article.metadata.source_url)}`}
+                </h2>
+                <p className="text-base line-clamp-3" style={{ color: 'var(--tg-text-color)' }}>
+                  {article.short_description}
+                </p>
+              </div>
+            </div>
+            {/* Footer Section */}
+            {(article.metadata.reading_time || progress > 0) && (
+              <div className="flex items-center justify-between text-sm">
+                <div className="flex items-center gap-2">
+                  {/* Only show reading time if it exists */}
+                  {article.metadata.reading_time ? (
+                    <div className="flex items-center gap-1 text-xs" style={{ color: 'var(--tg-hint-color)' }}>
+                      {article.metadata.reading_time} min read
+                    </div>
+                  ) : null}
+                  {progress > 0 && (
+                    <>
+                      <span className="text-xs" style={{ color: 'var(--tg-hint-color)' }}>•</span>
+                      {isCompleted ? (
+                        <span className="text-xs flex items-center gap-1.5 text-green-600 font-medium">
+                          completed
+                          <div className="flex-shrink-0 rounded-full bg-green-600/10 p-0.5">
+                            <CheckIcon className="w-3 h-3 text-green-600" />
+                          </div>
+                        </span>
+                      ) : (
+                        <span className="text-xs" style={{ color: 'var(--tg-hint-color)' }}>{progress}% complete</span>
+                      )}
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        </Link>
+      )}
     </div>
   )
 } 

@@ -48,7 +48,8 @@ async def get_user_articles_flat(user_id: str) -> UserArticleFlatCollection:
                             "archived_at": ua.timestamps.archived_at,
                             "deleted_at": ua.timestamps.deleted_at,
                             "created_at": art.created_at
-                        }
+                        },
+                        "type": getattr(art, "type", "article")
                     }
                 )
             )
@@ -88,7 +89,8 @@ async def get_user_article_flat(user_id: str, article_id: str) -> UserArticleFla
                 archived_at=user_article.timestamps.archived_at,
                 deleted_at=user_article.timestamps.deleted_at,
                 created_at=article.created_at
-            )
+            ),
+            type=getattr(article, "type", "article")
         )
     else:
         # Create a temporary user article record in the database
@@ -121,7 +123,8 @@ async def get_user_article_flat(user_id: str, article_id: str) -> UserArticleFla
                 archived_at=None,
                 deleted_at=None,
                 created_at=article.created_at
-            )
+            ),
+            type=getattr(article, "type", "article")
         )
 
 async def update_article_progress(user_id: str, article_id: str, progress_percentage: float) -> UserArticle:
