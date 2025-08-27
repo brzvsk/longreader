@@ -166,3 +166,7 @@ The project uses GitHub Actions for CI/CD. Here's how to deploy updates:
   ```
 - GitHub Actions workflows must be triggered manually - they don't run automatically on push
 - Monitor the GitHub Actions workflow to ensure the build succeeds before deploying
+
+## License
+
+This project is released under the MIT License. See the `LICENSE` file for details.
