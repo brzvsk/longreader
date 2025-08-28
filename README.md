@@ -9,7 +9,7 @@
 
 Longreader is a Telegram mini app designed to help users save and read long articles conveniently. It addresses the common pain points of reading lengthy content by offering features such as progress tracking and sharing capabilities.
 
-**You can use this app as publicly deployed by [@brzvsk](https://github.com/brzvsk) here: https://t.me/ReadWatchLaterApp**
+**You can use this app as publicly deployed by [@brzvsk](https://github.com/brzvsk) here: https://t.me/ReadWatchLaterBot**
 
 ## Project Structure
 
