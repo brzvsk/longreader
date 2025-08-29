@@ -1,5 +1,5 @@
 {
-  "license": "MIT",
+  "license": "GPL-3.0-only",
   "scripts": {
     "vercel-build": "next build"
   },

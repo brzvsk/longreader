@@ -136,4 +136,4 @@ Project was started by [@brzvsk](https://github.com/brzvsk), [@goldenluk](https:
 
 ## License
 
-This project is released under the MIT License. See the `LICENSE` file for details.
+This project is released under the GNU General Public License v3.0. See the `LICENSE` file for details.
