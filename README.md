@@ -11,6 +11,8 @@ Longreader is a Telegram mini app designed to help users save and read long arti
 
 **You can use this app as publicly deployed by [@brzvsk](https://github.com/brzvsk) here: https://t.me/ReadWatchLaterBot**
 
+We will appreciate any donations and support to keep the app running for everyone ❤️. Please, [donate with Telegram Tribute Bot](https://t.me/tribute/app?startapp=dvF1) (VISA, Mastercard, MIR, and Wallet payments accepted).
+
 ## Project Structure
 
 - **frontend/**: Next.js application for the web interface
